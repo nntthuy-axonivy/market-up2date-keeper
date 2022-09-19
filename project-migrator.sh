@@ -1,6 +1,8 @@
 #!/bin/bash
 
-workDir=$(mktemp -d -t projectConvertXXX)
+if [ -z "$workDir" ]; then
+  workDir=$(mktemp -d -t projectConvertXXX)
+fi
 
 engineUrl="https://download.axonivy.com/9.4.0/AxonIvyEngine9.4.0.2209130952_All_x64.zip" # 9.4.0 Release
 
@@ -36,11 +38,3 @@ raiseProject() {
   git add . #include new+moved files!
   git commit -m "Raise IvyProjectVersion to latest"
 }
-
-cleanup() {
-  rm -rf ${workDir}
-}
-
-trap cleanup EXIT
-
-

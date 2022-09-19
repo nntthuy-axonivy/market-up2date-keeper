@@ -37,9 +37,7 @@ updateMavenVersion() {
   # loop through all folders
   for d in */ ; do
     echo "Updating $d"
-    cd $d
-    mvn -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
-    cd ..
+    mvn -f $d -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
   done
 
   # commit changes
@@ -57,4 +55,4 @@ git switch -c "raise-to-${convert_to_version}"
 
 raiseProject
 updateMavenVersion
-cleanup
+cd ..
