@@ -45,4 +45,5 @@ git switch -c "raise-to-${convert_to_version}"
 
 raiseProject
 updateMavenVersion
+git push --set-upstream origin "raise-to-${convert_to_version}"
 cd ..
