@@ -37,5 +37,5 @@ raiseProject() {
   ${workDir}/engine/bin/EngineConfigCli migrate-project ${projects[@]}
 
   git add . #include new+moved files!
-  git commit -m "Raise IvyProjectVersion to latest"
+  git commit -m "Raise project to ${convert_to_version}"
 }

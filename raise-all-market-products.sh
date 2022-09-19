@@ -3,10 +3,11 @@
 # Usage: raise-all-market-products.sh <version>
 #
 
-ignoredRepos=(
+ignored_repos=(
   "market"
   "market-product"
   "demo-projects"
+  "github-workflows"
   "Apache License 2.0"
 )
 
@@ -37,18 +38,18 @@ migrateListOfRepos() {
 
 migrateRepo() {
   repo=$1
-  if [[ $repo =~ $ignoredRepos ]]; then
+  if [[ $repo =~ $ignored_repos ]]; then
     echo "Skipping repository $repo"
   else
     echo "Migrating $repo to $convert_to_version"
-    source ./repo-migrator.sh $convert_to_version $repo
+    source ./repo-migrator.sh
   fi
 }
 
-repoName=$2
-if [ -z "$repoName" ]; then
+repo_name=$2
+if [ -z "$repo_name" ]; then
   migrateListOfRepos
 else
-  migrateRepo $repoName
+  migrateRepo $repo_name
 fi
 
