@@ -4,12 +4,12 @@ if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi
 
-engineUrl="https://download.axonivy.com/9.4.0/AxonIvyEngine9.4.0.2209130952_All_x64.zip" # 9.4.0 Release
+engineUrl="https://developer.axonivy.com/permalink/9.4.0/axonivy-engine.zip" # 9.4.0 Release
 
 downloadEngine(){
   if ! [ -d "${workDir}/engine" ]; then
     echo "Downloading engine from ${engineUrl}"
-    (cd "$workDir" && curl --progress-bar -O "${engineUrl}") 
+    (cd "$workDir" && curl --progress-bar -L -O "${engineUrl}") 
     zipped=$(find "${workDir}" -maxdepth 1 -name "*.zip")
     unzip -qq "${zipped}" -d "${workDir}/engine"
     rm "${zipped}"
