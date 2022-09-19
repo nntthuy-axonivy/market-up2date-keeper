@@ -41,9 +41,10 @@ cloneRepo
 downloadEngine
 
 cd ${repo}
-git switch -c "raise-to-${convert_to_version}"
+branch="raise-to-${convert_to_version}"
+git switch -c $branch
 
 raiseProject
 updateMavenVersion
-git push --set-upstream origin "raise-to-${convert_to_version}"
+git push --set-upstream origin $branch
 cd ..
