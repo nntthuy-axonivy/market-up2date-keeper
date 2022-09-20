@@ -22,13 +22,10 @@ raiseProject() {
   gitName=$(basename ${gitDir})
   echo "Searching projects in ${gitDir}"
   projects=()
-  for ivyPref in `find ${gitDir} -name "ch.ivyteam.ivy.designer.prefs"`; do
+  for ivyPref in $(find ${gitDir} -name "ch.ivyteam.ivy.designer.prefs"); do
     project=$(dirname $(dirname $ivyPref))
     if ! [ -f "${project}/pom.xml" ]; then
       continue # prefs file not in natural project structure
-    fi
-    if [[ $project == *"/work/"* ]]; then
-      continue # temporary workspace artifact
     fi
     projects+=("${project}")
   done

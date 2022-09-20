@@ -27,14 +27,19 @@ jobs:
         with:
           java-version: 17
 
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: Configure Git
         run: |
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
 
       - name: Raise Products
         run: |
           export engineUrl=${{ github.event.inputs.engineUrl }}
           export workDir=$(pwd)
+          export IVY_JAVA_HOME=$JAVA_HOME_17_X64
           ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
         shell: bash

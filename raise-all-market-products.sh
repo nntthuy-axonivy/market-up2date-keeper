@@ -24,8 +24,8 @@ fi
 
 collectRepos() {
   curl https://api.github.com/orgs/axonivy-market/repos | 
-  grep -e '"name"' | 
-  sed -e 's/"name": "//' \
+  grep -e '"ssh_url"' | 
+  sed -e 's/"ssh_url": "//' \
       -e 's/",//'
 }
 

@@ -5,20 +5,20 @@
 
 source ./project-migrator.sh
 
-repos_url="https://github.com/axonivy-market/"
-
+repo_url="https://github.com/axonivy-market/${repo_name}"
+clone_url="git@github.com:axonivy-market/${repo_name}.git"
 
 checkRepoExists() {
-  exists=$(curl -s -o /dev/null -w "%{http_code}" "${repos_url}${repo}")
+  exists=$(curl -s -o /dev/null -w "%{http_code}" "${repo_url}")
   if [ $exists -ne 200 ]; then
-    echo "Repo ${repos_url}${repo} does not exist"
+    echo "Repo ${repo_url} does not exist"
     exit 1
   fi
 }
 
 cloneRepo() {
   if ! [ -d "${repo}" ]; then
-    git clone "${repos_url}${repo}"
+    git clone "${clone_url}"
   fi
 }
 
