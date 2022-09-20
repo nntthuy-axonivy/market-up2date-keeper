@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       product:
-        description: 'Axon Ivy product github name (none for all)'
+        description: 'github repository name (e.g. hubspot-connector) or blank for all projects of the axonivy-market org'
         required: false
       version:
         description: 'Version to raise (e.g. 9.4.0)'
         required: true
+        default: '9.4.0-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
@@ -19,10 +20,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set engine download URL
-        run: export engineUrl=${{ github.event.inputs.engineUrl }}
-        shell: bash
 
       - name: Raise Products
-        run: ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
+        run: |
+          export engineUrl=${{ github.event.inputs.engineUrl }}
+          ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
         shell: bash
