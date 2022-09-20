@@ -1,0 +1,20 @@
+name: Raise Market Products
+
+on: 
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'Product to raise'
+        required: false
+      version:
+        description: 'Version to raise'
+        required: true
+
+jobs:
+  raise-products:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Raise Products
+        run: ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
+        shell: bash
