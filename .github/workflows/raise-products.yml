@@ -22,6 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Setup Java JDK
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 17
+
+      - name: Configure Git
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
       - name: Raise Products
         run: |
           export engineUrl=${{ github.event.inputs.engineUrl }}
