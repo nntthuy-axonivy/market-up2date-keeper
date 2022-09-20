@@ -35,6 +35,14 @@ updateMavenVersion() {
   git commit -m "Update maven version to ${convert_to_version}"
 }
 
+finalize() {
+  has_unpushed_commits=$(git status | grep "Your branch is ahead of")
+  if [ -n "$has_unpushed_commits" ]; then
+    git push --set-upstream origin $branch
+    echo "${repo_url}" >> ${workDir}/migrated-repos.txt
+  fi
+}
+
 
 checkRepoExists
 cloneRepo
@@ -46,5 +54,5 @@ git switch -c $branch
 
 raiseProject
 updateMavenVersion
-git push --set-upstream origin $branch
+finalize
 cd ..
