@@ -35,5 +35,6 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ github.event.inputs.engineUrl }}
+          export workDir=$(pwd)
           ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
         shell: bash
