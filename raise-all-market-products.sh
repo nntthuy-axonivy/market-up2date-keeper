@@ -34,13 +34,16 @@ migrateListOfRepos() {
   while read repo_name; do
     migrateRepo $repo_name
   done
-  echo "Migrated repos: $(cat ${workDir}/migrated-repos.txt)"
+  if [ -f "${workDir}/migrated-repos.txt" ]; then
+    echo "Migrated repos:"
+    cat ${workDir}/migrated-repos.txt
+  fi
 }
 
 migrateRepo() {
   repo=$1
-  if [[ $repo =~ $ignored_repos ]]; then
-    echo "Skipping repository $repo"
+  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]]; then
+    echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"
     source ./repo-migrator.sh

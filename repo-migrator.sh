@@ -49,8 +49,8 @@ push() {
 
 
 checkRepoExists
-cloneRepo
 downloadEngine
+cloneRepo
 
 cd ${repo}
 branch="raise-to-${convert_to_version}"
