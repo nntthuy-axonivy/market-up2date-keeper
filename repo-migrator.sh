@@ -37,13 +37,13 @@ updateMavenVersion() {
 }
 
 push() {
-  has_unpushed_commits=$(git status | grep "Your branch is ahead of")
-  if [ -n "$has_unpushed_commits" ]; then
+  has_unpushed_commits=$(git log --branches --not --remotes)
+  if [ -z "$has_unpushed_commits" ]; then
+    echo "No changes to push for ${repo_name}"
+  else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
-  else
-    echo "No changes to push for ${repo_name}"
   fi
 }
 
