@@ -31,8 +31,12 @@ raiseProject() {
   done
   echo "Collected projects: ${projects[@]}"
 
-  ${workDir}/engine/bin/EngineConfigCli migrate-project ${projects[@]}
+  if [ ${#projects[@]} -gt 0 ]; then
+    ${workDir}/engine/bin/EngineConfigCli migrate-project ${projects[@]}
 
-  git add . #include new+moved files!
-  git commit -m "Raise project to ${convert_to_version}"
+    git add . #include new+moved files!
+    git commit -m "Raise project to ${convert_to_version}"
+  else
+    echo "No projects found in ${gitDir}"
+  fi
 }
