@@ -28,6 +28,7 @@ updateMavenVersion() {
   for d in */ ; do
     echo "Updating $d"
     mvn -f $d -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
+    mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
   done
 
   # commit changes
