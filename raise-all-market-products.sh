@@ -34,6 +34,7 @@ migrateListOfRepos() {
   while read repo; do
     migrateRepo $repo
   done
+  echo "Migrated repos: $(cat ${workDir}/migrated-repos.txt)"
 }
 
 migrateRepo() {
