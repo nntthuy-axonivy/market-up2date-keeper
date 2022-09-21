@@ -5,10 +5,7 @@
 
 ignored_repos=(
   "market"
-  "market-product"
   "demo-projects"
-  "github-workflows"
-  "Apache License 2.0"
 )
 
 if [ -z "$workDir" ]; then
@@ -23,10 +20,9 @@ fi
 
 
 collectRepos() {
-  curl https://api.github.com/orgs/axonivy-market/repos | 
-  grep -e '"name"' | 
-  sed -e 's/"name": "//' \
-      -e 's/",//'
+  # get repos that are not archived, templates and language is not null
+  curl https://api.github.com/orgs/axonivy-market/repos?per_page=100 | 
+  jq -r '.[] | select(.archived == false) | select(.is_template == false) | select(.language != null) | .name'
 }
 
 migrateListOfRepos() {

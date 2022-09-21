@@ -29,9 +29,9 @@ raiseProject() {
     fi
     projects+=("${project}")
   done
-  echo "Collected projects: ${projects[@]}"
 
   if [ ${#projects[@]} -gt 0 ]; then
+    echo "Collected projects: ${projects[@]}"
     ${workDir}/engine/bin/EngineConfigCli migrate-project ${projects[@]}
 
     git add . #include new+moved files!
