@@ -24,15 +24,15 @@ fi
 
 collectRepos() {
   curl https://api.github.com/orgs/axonivy-market/repos | 
-  grep -e '"ssh_url"' | 
-  sed -e 's/"ssh_url": "//' \
+  grep -e '"name"' | 
+  sed -e 's/"name": "//' \
       -e 's/",//'
 }
 
 migrateListOfRepos() {
   collectRepos |
-  while read repo; do
-    migrateRepo $repo
+  while read repo_name; do
+    migrateRepo $repo_name
   done
   echo "Migrated repos: $(cat ${workDir}/migrated-repos.txt)"
 }
