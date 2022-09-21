@@ -35,7 +35,7 @@ updateMavenVersion() {
   git commit -m "Update maven version to ${convert_to_version}"
 }
 
-finalize() {
+push() {
   has_unpushed_commits=$(git status | grep "Your branch is ahead of")
   if [ -n "$has_unpushed_commits" ]; then
     git push --set-upstream origin $branch
@@ -54,5 +54,5 @@ git switch -c $branch
 
 raiseProject
 updateMavenVersion
-finalize
+push
 cd ..
