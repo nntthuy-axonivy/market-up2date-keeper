@@ -23,6 +23,11 @@ cloneRepo() {
 }
 
 updateMavenVersion() {
+  # if root pom.xml exists
+  if [ -f "pom.xml" ]; then
+    mvn -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
+    mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
+  fi
   # update version in pom.xml
   # loop through all folders
   for d in */ ; do
