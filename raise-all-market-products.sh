@@ -14,7 +14,12 @@ fi
 
 convert_to_version=$1
 if [ -z "$convert_to_version" ]; then
-  echo "Missing target version parameter e.g 9.4.0"
+  echo "Missing target version parameter e.g 9.4.0-SNAPSHOT"
+  exit 1
+fi
+
+if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
+  echo "Version must be SNAPSHOT e.g 9.4.0-SNAPSHOT"
   exit 1
 fi
 

@@ -7,7 +7,7 @@ on:
         description: 'github repository name (e.g. hubspot-connector) or blank for all projects of the axonivy-market org'
         required: false
       version:
-        description: 'Version to raise (e.g. 9.4.0)'
+        description: 'Snaphsot version to raise (e.g. "9.4.0-SNAPSHOT")'
         required: true
         default: '9.4.0-SNAPSHOT'
       engineUrl:
