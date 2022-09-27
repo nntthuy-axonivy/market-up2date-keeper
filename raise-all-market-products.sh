@@ -27,7 +27,12 @@ fi
 collectRepos() {
   # get repos that are not archived, templates and language is not null
   curl https://api.github.com/orgs/axonivy-market/repos?per_page=100 | 
-  jq -r '.[] | select(.archived == false) | select(.is_template == false) | select(.default_branch == master) | select(.language != null) | .name'
+  jq -r '.[] | 
+    select(.archived == false) | 
+    select(.is_template == false) | 
+    select(.default_branch == "master") | 
+    select(.language != null) | 
+    .name'
 }
 
 migrateListOfRepos() {
