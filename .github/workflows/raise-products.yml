@@ -39,13 +39,13 @@ jobs:
 
       - name: Raise Products
         run: |
-          export engineUrl=${{ github.event.inputs.engineUrl }}
+          export engineUrl=${{ inputs.engineUrl }}
           export IVY_JAVA_HOME=$JAVA_HOME_17_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
-          ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
+          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash
 
       - name: Show migrated repositories
-        if: ${{ github.event.inputs.product }} == ''
+        if: ${{ inputs.product == '' }} 
         run: cat ${workDir}/migrated-repos.txt
         shell: bash
