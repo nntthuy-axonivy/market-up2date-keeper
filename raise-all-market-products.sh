@@ -4,6 +4,7 @@
 #
 
 ignored_repos=(
+  "market-up2date-keeper"
   "market"
   "demo-projects"
 )
@@ -35,15 +36,20 @@ collectRepos() {
     .name'
 }
 
+showMigratedRepos() {
+  log="${workDir}/migrated-repos.txt"
+  if [ -f $log ]; then
+    echo "Migrated repos:"
+    cat $log
+  fi
+}
+
 migrateListOfRepos() {
   collectRepos |
   while read repo_name; do
     migrateRepo $repo_name
   done
-  if [ -f "${workDir}/migrated-repos.txt" ]; then
-    echo "Migrated repos:"
-    cat ${workDir}/migrated-repos.txt
-  fi
+  showMigratedRepos
 }
 
 migrateRepo() {

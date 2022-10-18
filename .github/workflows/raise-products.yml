@@ -18,13 +18,16 @@ on:
 jobs:
   raise-products:
     runs-on: ubuntu-latest
+    env: 
+      workDir: $(pwd)
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v1.4.3
+        uses: actions/setup-java@v3
         with:
+          distribution: 'temurin'
           java-version: 17
 
       - uses: webfactory/ssh-agent@v0.5.4
@@ -39,7 +42,11 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ github.event.inputs.engineUrl }}
-          export workDir=$(pwd)
           export IVY_JAVA_HOME=$JAVA_HOME_17_X64
           ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
+        shell: bash
+
+      - name: Show migrated repositories
+        if: ${{ github.event.inputs.product }} == ''
+        run: cat ${workDir}/migrated-repos.txt
         shell: bash
