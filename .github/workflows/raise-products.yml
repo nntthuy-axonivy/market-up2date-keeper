@@ -18,8 +18,6 @@ on:
 jobs:
   raise-products:
     runs-on: ubuntu-latest
-    env: 
-      workDir: $(pwd)
 
     steps:
       - uses: actions/checkout@v3
@@ -43,6 +41,7 @@ jobs:
         run: |
           export engineUrl=${{ github.event.inputs.engineUrl }}
           export IVY_JAVA_HOME=$JAVA_HOME_17_X64
+          export workDir=$(pwd)
           ./raise-all-market-products.sh ${{ github.event.inputs.version }} ${{ github.event.inputs.product }}
         shell: bash
 
