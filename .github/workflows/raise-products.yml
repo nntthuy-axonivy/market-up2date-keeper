@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       product:
-        description: 'github repository name (e.g. hubspot-connector) or blank for all projects of the axonivy-market org'
+        description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
       version:
-        description: 'Snaphsot version to raise (e.g. "9.4.0-SNAPSHOT")'
+        description: 'Snaphsot version to raise (e.g. "10.0.0-SNAPSHOT")'
         required: true
-        default: '9.4.0-SNAPSHOT'
+        default: '10.0.0-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/9.4.0/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/10.0.0/axonivy-engine.zip'
 
 jobs:
   raise-products:
