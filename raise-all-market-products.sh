@@ -37,9 +37,10 @@ collectRepos() {
 }
 
 showMigratedRepos() {
-  if [ -f "${workDir}/migrated-repos.txt" ]; then
+  log="${workDir}/migrated-repos.txt"
+  if [ -f $log ]; then
     echo "Migrated repos:"
-    cat ${workDir}/migrated-repos.txt
+    cat $log
   fi
 }
 
