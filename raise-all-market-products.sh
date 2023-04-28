@@ -9,8 +9,15 @@ ignored_repos=(
   "demo-projects"
 )
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
+fi
+
+if [ -z "$gitDir" ]; then
+  gitDir="$DIR/repos"
+  echo $(mkdir -v -p $DIR/repos)
 fi
 
 convert_to_version=$1
@@ -53,13 +60,15 @@ migrateListOfRepos() {
 }
 
 migrateRepo() {
+  cd ${gitDir}
   repo=$1
   if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]]; then
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"
-    source ./repo-migrator.sh
+    source "$DIR/repo-migrator.sh"
   fi
+  cd $DIR
 }
 
 repo_name=$2
