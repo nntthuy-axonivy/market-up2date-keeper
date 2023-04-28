@@ -3,7 +3,7 @@
 # Usage: project-migrator.sh <version> <repository-name>
 #
 
-source ./project-migrator.sh
+source "$DIR/project-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
