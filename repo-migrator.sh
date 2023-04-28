@@ -54,14 +54,19 @@ push() {
 
 
 checkRepoExists
-downloadEngine
+#downloadEngine
 cloneRepo
 
 cd ${repo}
 branch="raise-to-${convert_to_version}"
 git switch -c $branch
 
-raiseProject
-updateMavenVersion
+#raiseProject
+#updateMavenVersion
+
+cp -v "$DIR/dev.yml" "./.github/workflows/dev.yml"
+git add "*/dev.yml"
+git commit -m "Introduce dev-build; checking latest engine compatibility"
+
 push
 cd ..
