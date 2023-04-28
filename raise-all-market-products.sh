@@ -6,6 +6,7 @@
 ignored_repos=(
   "market-up2date-keeper"
   "market"
+  "market-monitor"
   "demo-projects"
 )
 
