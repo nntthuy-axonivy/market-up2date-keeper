@@ -62,6 +62,6 @@ branch="raise-to-${convert_to_version}"
 git switch -c $branch
 
 raiseProject
-updateMavenVersion
+#updateMavenVersion
 push
 cd ..
