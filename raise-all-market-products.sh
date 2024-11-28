@@ -3,16 +3,8 @@
 # Usage: raise-all-market-products.sh <version>
 #
 
-ignored_repos=(
-  "market-up2date-keeper"
-  "market"
-  "market-monitor"
-  "demo-projects"
-)
-
-org=axonivy-market
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. ${DIR}/repo-collector.sh
 
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
@@ -34,30 +26,6 @@ if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
   exit 1
 fi
 
-
-githubRepos() {
-  gh auth status
-  ghApi="orgs/${org}/repos?per_page=100"
-  gh api https://api.github.com/${ghApi}
-}
-
-githubReposC(){
-  cache="/tmp/gh-${org}.json"
-  if [ ! -f "${cache}" ]; then
-    githubRepos > "${cache}"
-  fi
-  cat "${cache}"
-}
-
-collectRepos() {
-  githubReposC | 
-    jq -r '.[] | 
-    select(.archived == false) | 
-    select(.is_template == false) | 
-    select(.default_branch == "master") | 
-    select(.language != null) | 
-      .name'
-}
 
 showMigratedRepos() {
   log="${workDir}/migrated-repos.txt"
