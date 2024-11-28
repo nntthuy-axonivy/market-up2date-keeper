@@ -18,7 +18,7 @@ checkRepoExists() {
 
 cloneRepo() {
   if ! [ -d "${repo}" ]; then
-    git clone "${clone_url}"
+    gh repo clone "${clone_url}"
   fi
 }
 

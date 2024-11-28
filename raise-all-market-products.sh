@@ -10,6 +10,8 @@ ignored_repos=(
   "demo-projects"
 )
 
+org=axonivy-market
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ -z "$workDir" ]; then
@@ -33,15 +35,28 @@ if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
 fi
 
 
+githubRepos() {
+  gh auth status
+  ghApi="orgs/${org}/repos?per_page=100"
+  gh api https://api.github.com/${ghApi}
+}
+
+githubReposC(){
+  cache="/tmp/gh-${org}.json"
+  if [ ! -f "${cache}" ]; then
+    githubRepos > "${cache}"
+  fi
+  cat "${cache}"
+}
+
 collectRepos() {
-  # get repos that are not archived, templates and language is not null
-  curl https://api.github.com/orgs/axonivy-market/repos?per_page=100 | 
-  jq -r '.[] | 
+  githubReposC | 
+    jq -r '.[] | 
     select(.archived == false) | 
     select(.is_template == false) | 
     select(.default_branch == "master") | 
     select(.language != null) | 
-    .name'
+      .name'
 }
 
 showMigratedRepos() {
