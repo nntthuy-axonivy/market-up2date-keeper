@@ -5,6 +5,7 @@
 
 source "$DIR/project-migrator.sh"
 source "$DIR/maven-migrator.sh"
+source "$DIR/workflow-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
@@ -33,6 +34,13 @@ updateMavenVersion() {
   git commit -m "Update maven version to ${convert_to_version}"
 }
 
+updateActions() {
+  tag="v5"
+  updateWorkflows "${tag}"
+  git add .
+  git commit -m "Update workflow actions to ${tag}"
+}
+
 push() {
   has_unpushed_commits=$(git log --branches --not --remotes)
   if [ -z "$has_unpushed_commits" ]; then
@@ -55,5 +63,6 @@ git switch -c $branch
 
 raiseProject
 updateMavenVersion
+updateActions
 push
 cd ..
