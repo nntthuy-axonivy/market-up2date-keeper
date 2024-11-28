@@ -4,6 +4,7 @@
 #
 
 source "$DIR/project-migrator.sh"
+source "$DIR/maven-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
@@ -23,18 +24,9 @@ cloneRepo() {
 }
 
 updateMavenVersion() {
-  # if root pom.xml exists
-  if [ -f "pom.xml" ]; then
-    mvn -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
-  fi
-  # update version in pom.xml
-  # loop through all folders
-  for d in */ ; do
-    echo "Updating $d"
-    mvn -f $d -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
-  done
+  updateMvnProperty "project.build.plugin.version" "12.0.0"
+  updateMvnProperty "tester.version" "12.0.0"
+  artifactVersion $convert_to_version
 
   # commit changes
   git add .
