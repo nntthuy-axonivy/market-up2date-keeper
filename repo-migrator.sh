@@ -48,6 +48,7 @@ push() {
   else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
+    gh pr create --title "Migrate to 12.0 :camel:" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
   fi
 }
