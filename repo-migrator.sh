@@ -26,7 +26,7 @@ cloneRepo() {
 
 updateMavenVersion() {
   updateMvnProperty "project.build.plugin.version" "12.0.0"
-  updateMvnProperty "tester.version" "12.0.0"
+  updateMvnProperty "tester.version" "12.0.1"
   artifactVersion $convert_to_version
 
   # commit changes
