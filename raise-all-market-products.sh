@@ -3,14 +3,8 @@
 # Usage: raise-all-market-products.sh <version>
 #
 
-ignored_repos=(
-  "market-up2date-keeper"
-  "market"
-  "market-monitor"
-  "demo-projects"
-)
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. ${DIR}/repo-collector.sh
 
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
@@ -32,17 +26,6 @@ if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
   exit 1
 fi
 
-
-collectRepos() {
-  # get repos that are not archived, templates and language is not null
-  curl https://api.github.com/orgs/axonivy-market/repos?per_page=100 | 
-  jq -r '.[] | 
-    select(.archived == false) | 
-    select(.is_template == false) | 
-    select(.default_branch == "master") | 
-    select(.language != null) | 
-    .name'
-}
 
 showMigratedRepos() {
   log="${workDir}/migrated-repos.txt"

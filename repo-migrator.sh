@@ -4,6 +4,8 @@
 #
 
 source "$DIR/project-migrator.sh"
+source "$DIR/maven-migrator.sh"
+source "$DIR/workflow-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
@@ -18,27 +20,25 @@ checkRepoExists() {
 
 cloneRepo() {
   if ! [ -d "${repo}" ]; then
-    git clone "${clone_url}"
+    gh repo clone "${clone_url}"
   fi
 }
 
 updateMavenVersion() {
-  # if root pom.xml exists
-  if [ -f "pom.xml" ]; then
-    mvn -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
-  fi
-  # update version in pom.xml
-  # loop through all folders
-  for d in */ ; do
-    echo "Updating $d"
-    mvn -f $d -B versions:set -DnewVersion=$convert_to_version -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
-  done
+  updateMvnProperty "project.build.plugin.version" "12.0.0"
+  updateMvnProperty "tester.version" "12.0.1"
+  artifactVersion $convert_to_version
 
   # commit changes
   git add .
   git commit -m "Update maven version to ${convert_to_version}"
+}
+
+updateActions() {
+  tag="v5"
+  updateWorkflows "${tag}"
+  git add .
+  git commit -m "Update workflow actions to ${tag}"
 }
 
 push() {
@@ -48,6 +48,7 @@ push() {
   else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
+    gh pr create --title "Migrate to 12.0 :camel:" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
   fi
 }
@@ -63,5 +64,6 @@ git switch -c $branch
 
 raiseProject
 updateMavenVersion
+updateActions
 push
 cd ..
