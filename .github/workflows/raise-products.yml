@@ -34,19 +34,19 @@ jobs:
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
+          echo ${{ env.GH_TOKEN2 }} > token.sh
+          gh auth login --with-token < token.sh
+          gh auth setup-git
+        env:
+          GH_TOKEN2: ${{ secrets.GH }}
 
       - name: Raise Products
         run: |
           export engineUrl=${{ inputs.engineUrl }}
           export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
-          echo ${{ env.GH_TOKEN2 }} > token.sh
-          gh auth login --with-token < token.sh
-          gh auth setup-git
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash
-        env:
-          GH_TOKEN2: ${{ secrets.GH }}
 
       - name: Show migrated repositories
         if: ${{ inputs.product == '' }} 
