@@ -20,7 +20,7 @@ checkRepoExists() {
 
 cloneRepo() {
   if ! [ -d "${repo}" ]; then
-    gh repo clone "${clone_url}"
+    gh repo clone "${repo_url}"
   fi
 }
 

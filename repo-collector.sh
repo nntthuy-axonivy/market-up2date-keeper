@@ -10,9 +10,8 @@ ignored_repos=(
 org=axonivy-market
 
 githubRepos() {
-  gh auth status
   ghApi="orgs/${org}/repos?per_page=100"
-  gh api https://api.github.com/${ghApi}
+  curl https://api.github.com/${ghApi}
 }
 
 githubReposC(){
