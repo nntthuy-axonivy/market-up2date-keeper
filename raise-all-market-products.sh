@@ -55,6 +55,8 @@ migrateRepo() {
   cd $DIR
 }
 
+echo "running as $ACTOR or gh $GITHUB_ACTOR"
+
 repo_name=$2
 if [ -z "$repo_name" ]; then
   migrateListOfRepos
