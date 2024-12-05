@@ -10,6 +10,8 @@ jobs:
       uses: actions/checkout@v3
     - name: Write CSV
       run:  ./latestRelease.sh | tee releases_$(date '+%Y%m%d_%H%M').csv
+      env:
+        GH_TOKEN: ${{ github.token }}
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
