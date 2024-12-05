@@ -1,5 +1,8 @@
 name: Latest CSV
-on: [workflow_dispatch]
+on: 
+  workflow_dispatch:
+  schedule:
+    - cron:  '01 00 * * *'
 
 jobs:
   build:
