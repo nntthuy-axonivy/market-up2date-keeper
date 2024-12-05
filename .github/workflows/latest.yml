@@ -1,0 +1,17 @@
+name: Latest CSV
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    name: Latest CSV
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Write CSV
+      run:  ./latestRelease.sh | tee releases_$(date '+%Y%m%d_%H%M').csv
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: MarketReleases
+        path: releases_*.csv
