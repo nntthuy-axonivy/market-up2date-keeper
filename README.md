@@ -21,6 +21,7 @@ If the token is no longer valid, generate a token as follows:
 
     - Resource Owner = axonivy-market
     - Expiration = 30 days
+    - Repository access = All Repositories
     - Permissions that must granted:
       ```
       Contents=read/write
