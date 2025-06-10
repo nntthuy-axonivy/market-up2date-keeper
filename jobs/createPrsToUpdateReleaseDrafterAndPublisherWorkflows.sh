@@ -7,7 +7,7 @@
 # Using https://cli.github.com/
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-. ${DIR}/repo-collector.sh
+. ${DIR}/../repo-collector.sh
 
 create_label_if_not_exists() {
   local repo_name="$1"
