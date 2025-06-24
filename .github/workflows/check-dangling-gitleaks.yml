@@ -1,0 +1,38 @@
+name: Checking dangling commits by Gitleaks
+
+on:
+  workflow_dispatch:
+    inputs:
+      workingOrgs:
+        description: 'Comma-separated orgs to scan'
+        default: 'axonivy-market'
+      workingRepos:
+        description: 'Comma-separated list of repo names (optional)'
+        default: ''
+
+jobs:
+  gitleaks-scan:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Gitleaks
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name')
+          curl -sL "https://github.com/gitleaks/gitleaks/releases/download/${VERSION}/gitleaks_${VERSION#v}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      
+      - name: Run Gitleaks Scanning
+        run: ./check-dangling-commits.sh
+
+      - name: Upload Gitleaks Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-reports
+          path: gitleaks-reports/
