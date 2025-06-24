@@ -38,7 +38,7 @@ jobs:
         run: |
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
           mkdir -p gitleaks-reports
-
+          CSV_REPORT="gitleaks-reports/scanning-commits-report.csv"
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
 
@@ -60,16 +60,25 @@ jobs:
               cd "$REPO"
 
               TEMP_REPORT="../gitleaks-reports/tmp-${ORG}__${REPO}.json"
-              FINAL_REPORT="../gitleaks-reports/${ORG}__${REPO}.json"
-              gitleaks detect --source="$REPO" --report-path="$TEMP_REPORT" \
-                --report-format=json --redact || true
+              gitleaks detect --source="$REPO" --report-path="$TEMP_REPORT" --report-format=json --redact || true
 
               if [ -s "$TEMP_REPORT" ] && [ "$(jq length "$TEMP_REPORT")" -gt 0 ]; then
-                mv "$TEMP_REPORT" "$FINAL_REPORT"
-                echo "✅ Report saved for $ORG/$REPO"
+                echo "✅ Secrets found in $ORG/$REPO"
+
+                jq -r --arg org "$ORG" --arg repo "$REPO" '
+                  .[] | [
+                    $org,
+                    $repo,
+                    .rule,
+                    .file,
+                    (.line // 0),
+                    .commit,
+                    (.author // "unknown"),
+                    (.date // ""),
+                    (.secret // "REDACTED")
+                  ] | @csv' "$TEMP_REPORT" >> "$CSV_REPORT"
               else
-                echo "ℹ️ No secrets found in $ORG/$REPO, skipping report"
-                rm -f "$TEMP_REPORT"
+                echo "ℹ️ No secrets found in $ORG/$REPO"
               fi
 
               cd ..
