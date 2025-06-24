@@ -1,5 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+. "${DIR}/repo-collector.sh"
 
 mkdir -p gitleaks-reports
 OUTPUT_CSV="gitleaks-reports/combined-report.csv"

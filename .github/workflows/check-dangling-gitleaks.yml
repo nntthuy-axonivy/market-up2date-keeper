@@ -13,9 +13,6 @@ on:
 jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +27,8 @@ jobs:
       
       - name: Run Gitleaks Scanning
         run: ./check-dangling-commits.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Upload Gitleaks Reports
         uses: actions/upload-artifact@v4
