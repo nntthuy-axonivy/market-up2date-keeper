@@ -14,7 +14,7 @@ jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (for workflow context)
         uses: actions/checkout@v4
 
       - name: Install Gitleaks
@@ -24,15 +24,66 @@ jobs:
           tar -xzf gitleaks.tar.gz
           chmod +x gitleaks
           sudo mv gitleaks /usr/local/bin/
-      
-      - name: Run Gitleaks Scanning
-        run:
-          DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-          . "${DIR}/repo-collector.sh"
+
+      - name: Prepare inputs
+        id: prep
+        run: |
+          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
+          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
+
+      - name: Run Gitleaks scanning
+        run: |
+          IFS=',' read -ra ORG_LIST <<< "$ORGS"
           mkdir -p gitleaks-reports
-          OUTPUT_CSV="gitleaks-reports/combined-report.csv"
-        env:
-          GH_TOKEN: ${{ github.token }}
+          CSV_REPORT="gitleaks-reports/scanning-commits-report.csv"
+          for ORG in "${ORG_LIST[@]}"; do
+            echo "🔍 Fetching repos from $ORG"
+
+            if [ -n "$REPOS" ]; then
+              IFS=',' read -ra REPO_LIST <<< "$REPOS"
+            else
+              mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
+            fi
+
+            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
+
+            for REPO in "${REPO_LIST[@]}"; do
+              echo "🚨 Scanning $ORG/$REPO ..."
+              rm -rf "$REPO"
+              if ! git clone https://github.com/$ORG/$REPO.git; then
+                echo "❌ Failed to clone $ORG/$REPO. Skipping..."
+                continue
+              fi
+              cd "$REPO"
+
+              TEMP_REPORT="../gitleaks-reports/tmp-${ORG}__${REPO}.json"
+              gitleaks detect --source="$REPO" --report-path="$TEMP_REPORT" \
+                --report-format=json --redact || true
+
+              if [ -s "$TEMP_REPORT" ] && [ "$(jq length "$TEMP_REPORT")" -gt 0 ]; then
+                echo "✅ Secrets found in $ORG/$REPO"
+
+                jq -r --arg org "$ORG" --arg repo "$REPO" '
+                  .[] | [
+                    $org,
+                    $repo,
+                    .rule,
+                    .file,
+                    (.line // 0),
+                    .commit,
+                    (.author // "unknown"),
+                    (.date // ""),
+                    (.secret // "REDACTED")
+                  ] | @csv' "$TEMP_REPORT" >> "$CSV_REPORT"
+              else
+                echo "ℹ️ No secrets found in $ORG/$REPO"
+              fi
+
+              cd ..
+              rm -rf "$REPO"
+            done
+          done
+          echo "✅ Secret scanning complete!"
 
       - name: Upload Gitleaks Reports
         uses: actions/upload-artifact@v4

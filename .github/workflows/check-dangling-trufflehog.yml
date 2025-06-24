@@ -3,9 +3,6 @@ name: Checking dangling commits by Trufflehog
 on:
   workflow_dispatch:
     inputs:
-      dryRun:
-        description: 'Only log issues without failing or pushing'
-        default: 'true'
       workingOrgs:
         description: 'Comma-separated orgs to scan'
         default: 'axonivy-market'
@@ -16,9 +13,6 @@ on:
 jobs:
   truffle-scan:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-
     steps:
       - name: Checkout (for workflow context)
         uses: actions/checkout@v4
@@ -28,7 +22,11 @@ jobs:
 
       - name: Run TruffleHog scanning
         run: |
-          IFS=',' read -ra ORG_LIST <<< "$ORGS"
+          IFS=',' read -ra ORG_LIST <<< "${{ github.event.inputs.workingOrgs }}"
+          REPOS="${{ github.event.inputs.workingRepos }}"
+          DRY_RUN="${{ github.event.inputs.dryRun }}"
+          mkdir -p trufflehog-reports
+          CSV_REPORT="trufflehog-reports/combined-report.csv"
 
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
@@ -46,12 +44,22 @@ jobs:
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
-              mkdir -p trufflehog-reports
-
-              if [ "$DRY_RUN" == "true" ]; then
-                trufflehog --json "$REPO_URL" > "$REPORT" || true
+              trufflehog --json "$REPO_URL" > "$REPORT" || true
+              # Convert JSON to CSV format
+              if [ -s "$REPORT" ] && [ "$(jq length "$REPORT")" -gt 0 ]; then
+                jq -r --arg org "$ORG" --arg repo "$REPO" '
+                  .[] | [
+                    $org,
+                    $repo,
+                    .path,
+                    .branch,
+                    .commit,
+                    .date,
+                    .reason,
+                    (.stringsFound | join(";"))
+                  ] | @csv' "$REPORT" >> "$CSV_REPORT"
               else
-                trufflehog --json "$REPO_URL" --fail > "$REPORT"
+                echo "ℹ️ No findings in $ORG/$REPO"
               fi
             done
           done
