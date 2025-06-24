@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+
     steps:
       - name: Checkout (for workflow context)
         uses: actions/checkout@v4
@@ -37,7 +38,7 @@ jobs:
         run: |
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
           mkdir -p gitleaks-reports
-          CSV_REPORT="gitleaks-reports/scanning-commits-report.csv"
+
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
 
@@ -52,33 +53,23 @@ jobs:
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
               rm -rf "$REPO"
-              if ! git clone https://github.com/$ORG/$REPO.git; then
+              if ! git clone https://x-access-token:${GITHUB_TOKEN}@github.com/$ORG/$REPO.git; then
                 echo "❌ Failed to clone $ORG/$REPO. Skipping..."
                 continue
               fi
               cd "$REPO"
 
               TEMP_REPORT="../gitleaks-reports/tmp-${ORG}__${REPO}.json"
+              FINAL_REPORT="../gitleaks-reports/${ORG}__${REPO}.json"
               gitleaks detect --source="$REPO" --report-path="$TEMP_REPORT" \
                 --report-format=json --redact || true
 
               if [ -s "$TEMP_REPORT" ] && [ "$(jq length "$TEMP_REPORT")" -gt 0 ]; then
-                echo "✅ Secrets found in $ORG/$REPO"
-
-                jq -r --arg org "$ORG" --arg repo "$REPO" '
-                  .[] | [
-                    $org,
-                    $repo,
-                    .rule,
-                    .file,
-                    (.line // 0),
-                    .commit,
-                    (.author // "unknown"),
-                    (.date // ""),
-                    (.secret // "REDACTED")
-                  ] | @csv' "$TEMP_REPORT" >> "$CSV_REPORT"
+                mv "$TEMP_REPORT" "$FINAL_REPORT"
+                echo "✅ Report saved for $ORG/$REPO"
               else
-                echo "ℹ️ No secrets found in $ORG/$REPO"
+                echo "ℹ️ No secrets found in $ORG/$REPO, skipping report"
+                rm -f "$TEMP_REPORT"
               fi
 
               cd ..
