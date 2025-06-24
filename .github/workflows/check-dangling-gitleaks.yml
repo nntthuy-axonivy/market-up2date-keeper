@@ -39,6 +39,8 @@ jobs:
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
           mkdir -p gitleaks-reports
           CSV_REPORT="gitleaks-reports/scanning-commits-report.csv"
+          echo "org,repo,rule,file,line,commit,author,date,secret" > "$CSV_REPORT"
+
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
 
