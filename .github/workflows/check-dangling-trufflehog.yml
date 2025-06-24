@@ -28,7 +28,8 @@ jobs:
           REPOS="${{ github.event.inputs.workingRepos }}"
           DRY_RUN="${{ github.event.inputs.dryRun }}"
           mkdir -p trufflehog-reports
-          CSV_REPORT="trufflehog-reports/combined-report.csv"
+          CSV_REPORT="trufflehog-reports/check-commits-report.csv"
+          echo "org,repo,path,branch,commit,time,reason,stringsFound" > "$CSV_REPORT"
 
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
