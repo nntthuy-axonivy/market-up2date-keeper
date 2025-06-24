@@ -26,7 +26,11 @@ jobs:
           sudo mv gitleaks /usr/local/bin/
       
       - name: Run Gitleaks Scanning
-        run: ./check-dangling-commits.sh
+        run:
+          DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+          . "${DIR}/repo-collector.sh"
+          mkdir -p gitleaks-reports
+          OUTPUT_CSV="gitleaks-reports/combined-report.csv"
         env:
           GH_TOKEN: ${{ github.token }}
 
