@@ -72,7 +72,7 @@ jobs:
             csv_file="trufflehog-csv/$(basename "${report%.json}.csv")"
             echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$csv_file"
 
-            jq -c '.[]' "$report" | while IFS= read -r item; do
+            jq -c '.[] | select(type == "object")' "$report" | while IFS= read -r item; do
               echo "$item" | jq -r '[
                 (.branch // ""),
                 ((.commit // "") | gsub("[\n\r]"; " ")),
@@ -85,6 +85,7 @@ jobs:
               ] | @csv' >> "$csv_file"
             done
           done
+
 
           echo "✅ TruffleHog scanning complete!"
 
