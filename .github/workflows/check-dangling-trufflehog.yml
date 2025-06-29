@@ -25,10 +25,9 @@ jobs:
 
       - name: Install TruffleHog v3 (binary)
         run: |
-          curl -L https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog-linux-amd64 -o trufflehog
-          chmod +x trufflehog
-          sudo mv trufflehog /usr/local/bin/trufflehog
-          /usr/local/bin/trufflehog --version
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
+            |sh -s -- -b /usr/local/bin
+          trufflehog --version
 
       - name: Prepare inputs
         run: |
