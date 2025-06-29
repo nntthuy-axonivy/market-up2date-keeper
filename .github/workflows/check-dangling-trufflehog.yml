@@ -1,4 +1,4 @@
-name: Checking dangling commits by TruffleHog
+name: Checking dangling commits by Trufflehog
 
 permissions:
   contents: read
@@ -25,8 +25,7 @@ jobs:
 
       - name: Install TruffleHog v3 (binary)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
-            | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
           trufflehog --version
 
       - name: Prepare inputs
@@ -34,7 +33,7 @@ jobs:
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
-      - name: Run TruffleHog scan and convert output to CSV
+      - name: Run TruffleHog scan and output CSV
         run: |
           sudo apt-get update && sudo apt-get install -y jq
           mkdir -p trufflehog-csv
@@ -53,12 +52,13 @@ jobs:
             echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
+              rm -rf "$REPO"
+
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
-
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              trufflehog git "$REPO_URL" --no-update --json | \
+              trufflehog git "$REPO_URL" --json | \
               jq -c 'select(type == "object")' | while IFS= read -r item; do
                 echo "$item" | jq -r '[
                   (.branch // ""),
