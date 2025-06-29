@@ -64,20 +64,16 @@ jobs:
             done
           done
 
-      - name: Convert TruffleHog JSON reports to CSV (no Python)
+      - name: Convert TruffleHog JSON reports to CSV (safe version)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-
           mkdir -p trufflehog-csv
 
           for report in trufflehog-reports/*.json; do
             csv_file="trufflehog-csv/$(basename "${report%.json}.csv")"
-
             echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$csv_file"
 
-            while IFS= read -r line || [ -n "$line" ]; do
-              echo "$line" | jq -r '[
+            jq -c '.[]' "$report" | while IFS= read -r item; do
+              echo "$item" | jq -r '[
                 (.branch // ""),
                 ((.commit // "") | gsub("[\n\r]"; " ")),
                 (.commitHash // ""),
@@ -87,8 +83,7 @@ jobs:
                 ((.stringsFound // []) | join(" | ")),
                 ((.diff // "") | gsub("[\n\r]"; " "))
               ] | @csv' >> "$csv_file"
-            done < "$report"
-
+            done
           done
 
           echo "✅ TruffleHog scanning complete!"
