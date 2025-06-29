@@ -23,10 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # - name: Install TruffleHog v3 (binary)
+      #   run: |
+      #     curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
+      #       |sh -s -- -b /usr/local/bin
+      #     trufflehog --version
       - name: Install TruffleHog v3 (binary)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
-            |sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
           trufflehog --version
 
       - name: Prepare inputs
@@ -34,10 +38,10 @@ jobs:
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
-      - name: Run TruffleHog scan and output CSV
+      - name: Run TruffleHog scan
         run: |
-          mkdir -p trufflehog-csv
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
+          mkdir -p trufflehog-reports
 
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
@@ -54,13 +58,45 @@ jobs:
               rm -rf "$REPO"
 
               REPO_URL="https://github.com/$ORG/$REPO.git"
-              REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
+              REPORT_JSON="trufflehog-reports/${ORG}__${REPO}.json"
 
-              trufflehog --format csv "$REPO_URL" > "$REPORT_CSV" || echo "⚠️ Scan failed for $REPO_URL"
+              trufflehog git "$REPO_URL" --json > "$REPORT_JSON" || echo "⚠️ Scan failed for $REPO_URL"
             done
           done
 
+      - name: Convert TruffleHog JSON reports to CSV (no Python)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+          mkdir -p trufflehog-csv
+
+          for report in trufflehog-reports/*.json; do
+            csv_file="trufflehog-csv/$(basename "${report%.json}.csv")"
+
+            echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$csv_file"
+
+            while IFS= read -r line || [ -n "$line" ]; do
+              echo "$line" | jq -r '[
+                .branch,
+                (.commit | gsub("[\n\r]"; " ")),
+                .commitHash,
+                .date,
+                .path,
+                .reason,
+                (.stringsFound | join(" | ")),
+                (.diff | gsub("[\n\r]"; " "))
+              ] | @csv' >> "$csv_file"
+            done < "$report"
+          done
+
           echo "✅ TruffleHog scanning complete!"
+
+      - name: Upload TruffleHog JSON Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-reports
+          path: trufflehog-reports/
 
       - name: Upload TruffleHog CSV Reports
         uses: actions/upload-artifact@v4
