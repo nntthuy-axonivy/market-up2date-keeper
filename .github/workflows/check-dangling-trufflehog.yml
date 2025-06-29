@@ -53,30 +53,33 @@ jobs:
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
               rm -rf "$REPO"
-              REPO_URL="https://github.com/$ORG/$REPO.git"
+              mkdir -p trufflehog-csv
+              REPO_URL="https://github.com/axonivy-market/x-connector.git"
+              RAW_JSON="trufflehog-csv/output.jsonl"
+              REPORT_CSV="trufflehog-csv/output.csv"
 
-              RAW_JSON="raw-json/${ORG}__${REPO}.json"
-              REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
+              # 1. Run TruffleHog and capture only JSON lines (exclude logs)
+              trufflehog git "$REPO_URL" --json > "$RAW_JSON"
 
-              # Run TruffleHog and capture both stdout and stderr
-              trufflehog git "$REPO_URL" --json 2>&1 | tee "$RAW_JSON"
-
-              # Convert to CSV
+              # 2. Write CSV header
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              grep '^{.*}$' "$RAW_JSON" | jq -r '
-                select(.branch? and .commitHash? and .diff?) |
-                [
-                  .branch,
-                  (.commit | gsub("[\n\r]"; " ")),
-                  .commitHash,
-                  .date,
-                  .path,
-                  .reason,
-                  (.stringsFound // [] | join(" | ")),
-                  (.diff | gsub("[\n\r]"; " "))
-                ] | @csv
-              ' >> "$REPORT_CSV"
+              # 3. Filter real findings only (ignore logs), convert to CSV
+              cat "$RAW_JSON" | jq -c 'select(.branch and .commit and .commitHash)' | jq -r '
+              [
+                .branch,
+                (.commit | gsub("[\n\r]"; " ")),
+                .commitHash,
+                .date,
+                .path,
+                .reason,
+                (.stringsFound // [] | join(" | ")),
+                (.diff | gsub("[\n\r]"; " "))
+              ] | @csv' >> "$REPORT_CSV"
+
+              echo "✅ Done. CSV content:"
+              cat "$REPORT_CSV"
+
 
             done
           done
@@ -88,9 +91,3 @@ jobs:
         with:
           name: trufflehog-csv
           path: trufflehog-csv/
-
-      - name: Upload Raw JSON TruffleHog Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: trufflehog-json
-          path: raw-json/
