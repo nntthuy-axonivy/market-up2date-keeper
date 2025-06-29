@@ -1,5 +1,7 @@
 name: Checking dangling commits by Trufflehog
 
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -13,10 +15,9 @@ on:
 jobs:
   truffle-scan:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
+
     steps:
-      - name: Checkout (for workflow context)
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install TruffleHog
@@ -24,12 +25,7 @@ jobs:
 
       - name: Run TruffleHog scanning
         run: |
-          IFS=',' read -ra ORG_LIST <<< "${{ github.event.inputs.workingOrgs }}"
-          REPOS="${{ github.event.inputs.workingRepos }}"
-          DRY_RUN="${{ github.event.inputs.dryRun }}"
-          mkdir -p trufflehog-reports
-          CSV_REPORT="trufflehog-reports/check-commits-report.csv"
-          echo "org,repo,path,branch,commit,time,reason,stringsFound" > "$CSV_REPORT"
+          IFS=',' read -ra ORG_LIST <<< "$ORGS"
 
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
@@ -47,23 +43,8 @@ jobs:
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
+              mkdir -p trufflehog-reports
               trufflehog --json "$REPO_URL" > "$REPORT" || true
-              # Convert JSON to CSV format
-              if [ -s "$REPORT" ] && [ "$(jq length "$REPORT")" -gt 0 ]; then
-                jq -r --arg org "$ORG" --arg repo "$REPO" '
-                  .[] | [
-                    $org,
-                    $repo,
-                    .path,
-                    .branch,
-                    .commit,
-                    .date,
-                    .reason,
-                    (.stringsFound | join(";"))
-                  ] | @csv' "$REPORT" >> "$CSV_REPORT"
-              else
-                echo "ℹ️ No findings in $ORG/$REPO"
-              fi
             done
           done
           echo "✅ TruffleHog scanning complete!"
