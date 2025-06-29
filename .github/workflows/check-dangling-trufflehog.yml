@@ -59,25 +59,20 @@ jobs:
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              SCAN_OUTPUT=$(trufflehog git "$REPO_URL" --json)
-
-              if [ -z "$SCAN_OUTPUT" ]; then
-                echo "ℹ️ No output from TruffleHog for $REPO"
-                continue
-              fi
-
-              echo "$SCAN_OUTPUT" | jq -c 'select(.Raw?)' | while IFS= read -r item; do
+              trufflehog git "$REPO_URL" --json | \
+              jq -c 'select(type == "object")' | while IFS= read -r item; do
                 echo "$item" | jq -r '[
-                  (.Branch // ""),
-                  ((.Commit // "") | gsub("[\n\r]"; " ")),
-                  (.CommitHash // ""),
-                  (.Timestamp // ""),
-                  (.Path // ""),
-                  (.Reason // ""),
-                  ((.StringsFound // []) | join(" | ")),
-                  ((.Raw // "") | gsub("[\n\r]"; " "))
+                  (.branch // ""),
+                  (.commit // "" | gsub("[\n\r]"; " ")),
+                  (.commitHash // ""),
+                  (.date // ""),
+                  (.path // ""),
+                  (.reason // ""),
+                  ((.stringsFound // []) | join(" | ")),
+                  (.diff // "" | gsub("[\n\r]"; " "))
                 ] | @csv' >> "$REPORT_CSV"
               done
+
               
               # trufflehog git "$REPO_URL" --json | \
               # jq -c 'select(type == "object")' | while IFS= read -r item; do
