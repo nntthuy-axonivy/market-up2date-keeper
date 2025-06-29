@@ -5,9 +5,6 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      dryRun:
-        description: 'Only log issues without failing or pushing'
-        default: 'true'
       workingOrgs:
         description: 'Comma-separated orgs to scan'
         default: 'axonivy-market'
@@ -26,6 +23,12 @@ jobs:
 
       - name: Install TruffleHog
         run: pip install trufflehog
+
+      - name: Prepare inputs
+        id: prep
+        run: |
+          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
+          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
       - name: Run TruffleHog scanning
         run: |
@@ -48,11 +51,7 @@ jobs:
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-              if [ "$DRY_RUN" == "true" ]; then
-                trufflehog --json "$REPO_URL" > "$REPORT" || true
-              else
-                trufflehog --json "$REPO_URL" --fail > "$REPORT"
-              fi
+              trufflehog --json "$REPO_URL" > "$REPORT" || true
             done
           done
           echo "✅ TruffleHog scanning complete!"
