@@ -64,19 +64,20 @@ jobs:
               # Convert to CSV
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              jq -r '
-                select(type == "object") |
+              grep '^{.*}$' "$RAW_JSON" | jq -r '
+                select(.branch? and .commitHash? and .diff?) |
                 [
-                  (.branch // ""),
-                  (.commit // "" | gsub("[\n\r]"; " ")),
-                  (.commitHash // ""),
-                  (.date // ""),
-                  (.path // ""),
-                  (.reason // ""),
+                  .branch,
+                  (.commit | gsub("[\n\r]"; " ")),
+                  .commitHash,
+                  .date,
+                  .path,
+                  .reason,
                   (.stringsFound // [] | join(" | ")),
-                  (.diff // "" | gsub("[\n\r]"; " "))
+                  (.diff | gsub("[\n\r]"; " "))
                 ] | @csv
-              ' "$RAW_JSON" >> "$REPORT_CSV"
+              ' >> "$REPORT_CSV"
+
             done
           done
 
