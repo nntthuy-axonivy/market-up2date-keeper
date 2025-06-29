@@ -5,6 +5,9 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
+      dryRun:
+        description: 'Only log issues without failing or pushing'
+        default: 'true'
       workingOrgs:
         description: 'Comma-separated orgs to scan'
         default: 'axonivy-market'
@@ -45,7 +48,11 @@ jobs:
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-              trufflehog --json "$REPO_URL" > "$REPORT" || true
+              if [ "$DRY_RUN" == "true" ]; then
+                trufflehog --json "$REPO_URL" > "$REPORT" || true
+              else
+                trufflehog --json "$REPO_URL" --fail > "$REPORT"
+              fi
             done
           done
           echo "✅ TruffleHog scanning complete!"
