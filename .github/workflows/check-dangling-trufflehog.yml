@@ -57,24 +57,22 @@ jobs:
 
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
+
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-            echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
-
-            jq -r '
-              select(type == "object") |
-              [
-                (.branch // ""),
-                (.commit // "" | gsub("[\n\r]"; " ")),
-                (.commitHash // ""),
-                (.date // ""),
-                (.path // ""),
-                (.reason // ""),
-                (.stringsFound // [] | join(" | ")),
-                (.diff // "" | gsub("[\n\r]"; " "))
-              ] | @csv
-            ' scan-output.json >> "$REPORT_CSV"
-
+              jq -r '
+                select(type == "object") |
+                [
+                  (.branch // ""),
+                  (.commit // "" | gsub("[\n\r]"; " ")),
+                  (.commitHash // ""),
+                  (.date // ""),
+                  (.path // ""),
+                  (.reason // ""),
+                  (.stringsFound // [] | join(" | ")),
+                  (.diff // "" | gsub("[\n\r]"; " "))
+                ] | @csv
+              ' scan-output.json >> "$REPORT_CSV"
             done
           done
 
