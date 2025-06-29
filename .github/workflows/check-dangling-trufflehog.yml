@@ -2,7 +2,6 @@ name: Checking dangling commits by Trufflehog
 
 permissions:
   contents: read
-
 on:
   workflow_dispatch:
     inputs:
@@ -18,26 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install TruffleHog v3 (binary)
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-          trufflehog --version
+      - name: Install TruffleHog
+        run: pip install trufflehog
 
       - name: Prepare inputs
+        id: prep
         run: |
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
-      - name: Run TruffleHog scan and generate CSV
+      - name: Run TruffleHog scanning
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
-          mkdir -p trufflehog-csv raw-json
-
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
 
           for ORG in "${ORG_LIST[@]}"; do
@@ -52,42 +46,18 @@ jobs:
             echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
-              rm -rf "$REPO"
-              mkdir -p trufflehog-csv
-              REPO_URL="https://github.com/axonivy-market/x-connector.git"
-              RAW_JSON="trufflehog-csv/output.jsonl"
-              REPORT_CSV="trufflehog-csv/output.csv"
+               rm -rf "$REPO"
+              REPO_URL="https://github.com/$ORG/$REPO.git"
+              REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
-              # 1. Run TruffleHog and capture only JSON lines (exclude logs)
-              trufflehog git "$REPO_URL" --json > "$RAW_JSON"
-
-              # 2. Write CSV header
-              echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
-
-              # 3. Filter real findings only (ignore logs), convert to CSV
-              cat "$RAW_JSON" | jq -c 'select(.branch and .commit and .commitHash)' | jq -r '
-              [
-                .branch,
-                (.commit | gsub("[\n\r]"; " ")),
-                .commitHash,
-                .date,
-                .path,
-                .reason,
-                (.stringsFound // [] | join(" | ")),
-                (.diff | gsub("[\n\r]"; " "))
-              ] | @csv' >> "$REPORT_CSV"
-
-              echo "✅ Done. CSV content:"
-              cat "$REPORT_CSV"
-
-
+              mkdir -p trufflehog-reports
+              trufflehog --json "$REPO_URL" | jq '.' > "$REPORT" || true
             done
           done
+          echo "✅ TruffleHog scanning complete!"
 
-          echo "✅ TruffleHog scanning and CSV conversion complete!"
-
-      - name: Upload TruffleHog CSV Reports
+      - name: Upload TruffleHog Reports
         uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-csv
-          path: trufflehog-csv/
+          name: trufflehog-reports
+          path: trufflehog-reports/
