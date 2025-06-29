@@ -33,10 +33,10 @@ jobs:
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
-      - name: Run TruffleHog scan and output CSV
+      - name: Run TruffleHog scan and generate CSV
         run: |
           sudo apt-get update && sudo apt-get install -y jq
-          mkdir -p trufflehog-csv
+          mkdir -p trufflehog-csv raw-json
 
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
 
@@ -49,15 +49,19 @@ jobs:
               mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
             fi
 
-            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG: ${REPO_LIST[*]}"
-
+            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
               rm -rf "$REPO"
-
               REPO_URL="https://github.com/$ORG/$REPO.git"
+
+              RAW_JSON="raw-json/${ORG}__${REPO}.json"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
 
+              # Run TruffleHog and capture both stdout and stderr
+              trufflehog git "$REPO_URL" --json 2>&1 | tee "$RAW_JSON"
+
+              # Convert to CSV
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
               jq -r '
@@ -72,14 +76,20 @@ jobs:
                   (.stringsFound // [] | join(" | ")),
                   (.diff // "" | gsub("[\n\r]"; " "))
                 ] | @csv
-              ' scan-output.json >> "$REPORT_CSV"
+              ' "$RAW_JSON" >> "$REPORT_CSV"
             done
           done
 
-          echo "✅ TruffleHog scanning complete!"
+          echo "✅ TruffleHog scanning and CSV conversion complete!"
 
       - name: Upload TruffleHog CSV Reports
         uses: actions/upload-artifact@v4
         with:
           name: trufflehog-csv
           path: trufflehog-csv/
+
+      - name: Upload Raw JSON TruffleHog Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-json
+          path: raw-json/
