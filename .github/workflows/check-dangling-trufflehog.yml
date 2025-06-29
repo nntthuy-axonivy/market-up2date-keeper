@@ -49,7 +49,8 @@ jobs:
               mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
             fi
 
-            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
+            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG: ${REPO_LIST[*]}"
+
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
               rm -rf "$REPO"
@@ -59,23 +60,24 @@ jobs:
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
               SCAN_OUTPUT=$(trufflehog git "$REPO_URL" --json)
+
               if [ -z "$SCAN_OUTPUT" ]; then
-                echo "ℹ️ No findings in $ORG/$REPO"
-              else
-                echo "$SCAN_OUTPUT" | jq -c 'select(type == "object")' | while IFS= read -r item; do
-                  echo "$item" | jq -r '[
-                    (.branch // ""),
-                    ((.commit // "") | gsub("[\n\r]"; " ")),
-                    (.commitHash // ""),
-                    (.date // ""),
-                    ((.diff // "") | gsub("[\n\r]"; " ")),
-                    (.path // ""),
-                    ((.printDiff // "") | gsub("[\n\r]"; " ")),
-                    (.reason // ""),
-                    ((.stringsFound // []) | join(" | "))
-                  ] | @csv' >> "$REPORT_CSV"
-                done
+                echo "ℹ️ No output from TruffleHog for $REPO"
+                continue
               fi
+
+              echo "$SCAN_OUTPUT" | jq -c 'select(.Raw?)' | while IFS= read -r item; do
+                echo "$item" | jq -r '[
+                  (.Branch // ""),
+                  ((.Commit // "") | gsub("[\n\r]"; " ")),
+                  (.CommitHash // ""),
+                  (.Timestamp // ""),
+                  (.Path // ""),
+                  (.Reason // ""),
+                  ((.StringsFound // []) | join(" | ")),
+                  ((.Raw // "") | gsub("[\n\r]"; " "))
+                ] | @csv' >> "$REPORT_CSV"
+              done
               
               # trufflehog git "$REPO_URL" --json | \
               # jq -c 'select(type == "object")' | while IFS= read -r item; do
