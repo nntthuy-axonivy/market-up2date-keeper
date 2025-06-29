@@ -59,35 +59,19 @@ jobs:
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              trufflehog git "$REPO_URL" --json | \
-              jq -c 'select(type == "object")' | while IFS= read -r item; do
-                echo "$item" | jq -r '[
-                  (.branch // ""),
-                  (.commit // "" | gsub("[\n\r]"; " ")),
-                  (.commitHash // ""),
-                  (.date // ""),
-                  (.path // ""),
-                  (.reason // ""),
-                  ((.stringsFound // []) | join(" | ")),
-                  (.diff // "" | gsub("[\n\r]"; " "))
-                ] | @csv' >> "$REPORT_CSV"
-              done
-
-              
-              # trufflehog git "$REPO_URL" --json | \
-              # jq -c 'select(type == "object")' | while IFS= read -r item; do
-              #   echo "$item" | jq -r '[
-              #     (.branch // ""),
-              #     ((.commit // "") | gsub("[\n\r]"; " ")),
-              #     (.commitHash // ""),
-              #     (.date // ""),
-              #     ((.diff // "") | gsub("[\n\r]"; " ")),
-              #     (.path // ""),
-              #     ((.printDiff // "") | gsub("[\n\r]"; " ")),
-              #     (.reason // ""),
-              #     ((.stringsFound // []) | join(" | "))
-              #   ] | @csv' >> "$REPORT_CSV"
-              # done
+              trufflehog git "$REPO_URL" --json | jq -r '
+              select(type == "object") |
+              [
+                (.branch // ""),
+                (.commit // "" | gsub("[\n\r]"; " ")),
+                (.commitHash // ""),
+                (.date // ""),
+                (.path // ""),
+                (.reason // ""),
+                (.stringsFound // [] | join(" | ")),
+                (.diff // "" | gsub("[\n\r]"; " "))
+              ] | @csv
+            ' >> "$REPORT_CSV"
             done
           done
 
