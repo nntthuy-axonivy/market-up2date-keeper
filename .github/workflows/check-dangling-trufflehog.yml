@@ -32,9 +32,6 @@ jobs:
 
       - name: Run TruffleHog scan and output CSV
         run: |
-          pip install trufflehog
-          mkdir -p trufflehog-csv
-
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
 
           for ORG in "${ORG_LIST[@]}"; do
@@ -54,6 +51,7 @@ jobs:
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
 
+              mkdir -p trufflehog-csv
               # Direct CSV output from TruffleHog
               trufflehog --format csv "$REPO_URL" > "$REPORT_CSV" || true
             done
