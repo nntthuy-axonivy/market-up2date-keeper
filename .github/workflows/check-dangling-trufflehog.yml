@@ -58,19 +58,39 @@ jobs:
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
               echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
 
-              trufflehog git "$REPO_URL" --json | \
-              jq -c 'select(type == "object")' | while IFS= read -r item; do
-                echo "$item" | jq -r '[
-                  (.branch // ""),
-                  ((.commit // "") | gsub("[\n\r]"; " ")),
-                  (.commitHash // ""),
-                  (.date // ""),
-                  (.path // ""),
-                  (.reason // ""),
-                  ((.stringsFound // []) | join(" | ")),
-                  ((.diff // "") | gsub("[\n\r]"; " "))
-                ] | @csv' >> "$REPORT_CSV"
-              done
+              SCAN_OUTPUT=$(trufflehog git "$REPO_URL" --json)
+              if [ -z "$SCAN_OUTPUT" ]; then
+                echo "ℹ️ No findings in $ORG/$REPO"
+              else
+                echo "$SCAN_OUTPUT" | jq -c 'select(type == "object")' | while IFS= read -r item; do
+                  echo "$item" | jq -r '[
+                    (.branch // ""),
+                    ((.commit // "") | gsub("[\n\r]"; " ")),
+                    (.commitHash // ""),
+                    (.date // ""),
+                    ((.diff // "") | gsub("[\n\r]"; " ")),
+                    (.path // ""),
+                    ((.printDiff // "") | gsub("[\n\r]"; " ")),
+                    (.reason // ""),
+                    ((.stringsFound // []) | join(" | "))
+                  ] | @csv' >> "$REPORT_CSV"
+                done
+              fi
+              
+              # trufflehog git "$REPO_URL" --json | \
+              # jq -c 'select(type == "object")' | while IFS= read -r item; do
+              #   echo "$item" | jq -r '[
+              #     (.branch // ""),
+              #     ((.commit // "") | gsub("[\n\r]"; " ")),
+              #     (.commitHash // ""),
+              #     (.date // ""),
+              #     ((.diff // "") | gsub("[\n\r]"; " ")),
+              #     (.path // ""),
+              #     ((.printDiff // "") | gsub("[\n\r]"; " ")),
+              #     (.reason // ""),
+              #     ((.stringsFound // []) | join(" | "))
+              #   ] | @csv' >> "$REPORT_CSV"
+              # done
             done
           done
 
