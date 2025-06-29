@@ -2,6 +2,7 @@ name: Checking dangling commits by Trufflehog
 
 permissions:
   contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -17,21 +18,26 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install TruffleHog
-        run: pip install trufflehog
+      - name: Install TruffleHog v3 (binary)
+        run: |
+          curl -L https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog-linux-amd64 -o trufflehog
+          chmod +x trufflehog
+          sudo mv trufflehog /usr/local/bin/trufflehog
+          trufflehog --version
 
       - name: Prepare inputs
-        id: prep
         run: |
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
       - name: Run TruffleHog scan and output CSV
         run: |
+          mkdir -p trufflehog-csv
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
 
           for ORG in "${ORG_LIST[@]}"; do
@@ -51,15 +57,14 @@ jobs:
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
 
-              mkdir -p trufflehog-csv
-              # Direct CSV output from TruffleHog
-              trufflehog --format csv "$REPO_URL" > "$REPORT_CSV" || true
+              trufflehog --format csv "$REPO_URL" > "$REPORT_CSV" || echo "⚠️ Scan failed for $REPO_URL"
             done
           done
+
           echo "✅ TruffleHog scanning complete!"
 
-      - name: Upload TruffleHog Reports
+      - name: Upload TruffleHog CSV Reports
         uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-reports
-          path: trufflehog-reports/
+          name: trufflehog-csv
+          path: trufflehog-csv/
