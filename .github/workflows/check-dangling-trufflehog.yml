@@ -25,7 +25,7 @@ jobs:
 
       - name: Install TruffleHog v3 (binary)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin v3.81.9
           trufflehog --version
 
       - name: Prepare inputs
@@ -54,27 +54,36 @@ jobs:
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
               rm -rf "$REPO"
-
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
-              echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
+              TEMP_JSON="trufflehog-csv/${ORG}__${REPO}.json"
 
-              trufflehog git "$REPO_URL" --json | jq -r '
-              select(type == "object") |
-              [
-                (.branch // ""),
-                (.commit // "" | gsub("[\n\r]"; " ")),
-                (.commitHash // ""),
-                (.date // ""),
-                (.path // ""),
-                (.reason // ""),
-                (.stringsFound // [] | join(" | ")),
-                (.diff // "" | gsub("[\n\r]"; " "))
-              ] | @csv
-            ' >> "$REPORT_CSV"
+              echo "Executing: trufflehog git $REPO_URL --json > $TEMP_JSON"
+              trufflehog git "$REPO_URL" --json > "$TEMP_JSON" || true
+
+              if [ -s "$TEMP_JSON" ]; then
+                echo '"branch","commit","commitHash","date","path","reason","stringsFound","diff","printDiff"' > "$REPORT_CSV"
+                jq -r '
+                  select(type == "object") |
+                  [
+                    (.branch // ""),
+                    (.commit // "" | gsub("[\n\r]"; " ")),
+                    (.commitHash // ""),
+                    (.date // ""),
+                    (.path // ""),
+                    (.reason // ""),
+                    (.stringsFound // [] | join(" | ")),
+                    (.diff // "" | gsub("[\n\r]"; " ")),
+                    (.printDiff // "" | gsub("[\n\r]|\u001b\\[[0-9;]*m"; " "))
+                  ] | @csv
+                ' "$TEMP_JSON" >> "$REPORT_CSV"
+              else
+                echo "No findings for $ORG/$REPO, creating empty CSV"
+                echo '"branch","commit","commitHash","date","path","reason","stringsFound","diff","printDiff"' > "$REPORT_CSV"
+              fi
+              rm -f "$TEMP_JSON"
             done
           done
-
           echo "✅ TruffleHog scanning complete!"
 
       - name: Upload TruffleHog CSV Reports
