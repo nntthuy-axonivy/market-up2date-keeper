@@ -28,7 +28,7 @@ jobs:
           curl -L https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog-linux-amd64 -o trufflehog
           chmod +x trufflehog
           sudo mv trufflehog /usr/local/bin/trufflehog
-          trufflehog --version
+          /usr/local/bin/trufflehog --version
 
       - name: Prepare inputs
         run: |
