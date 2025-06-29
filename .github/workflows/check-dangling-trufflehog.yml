@@ -30,9 +30,15 @@ jobs:
           echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
           echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
-      - name: Run TruffleHog scanning
+      - name: Run TruffleHog scanning and convert to CSV
         run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
           IFS=',' read -ra ORG_LIST <<< "$ORGS"
+
+          mkdir -p trufflehog-reports
+          mkdir -p trufflehog-csv
 
           for ORG in "${ORG_LIST[@]}"; do
             echo "🔍 Fetching repos from $ORG"
@@ -46,12 +52,28 @@ jobs:
             echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
-               rm -rf "$REPO"
-              REPO_URL="https://github.com/$ORG/$REPO.git"
-              REPORT="trufflehog-reports/${ORG}__${REPO}.json"
+              rm -rf "$REPO"
 
-              mkdir -p trufflehog-reports
-              trufflehog --json "$REPO_URL" > "$REPORT" || true
+              REPO_URL="https://github.com/$ORG/$REPO.git"
+              REPORT_JSON="trufflehog-reports/${ORG}__${REPO}.json"
+              REPORT_CSV="trufflehog-csv/${ORG}__${REPO}.csv"
+
+              trufflehog --json "$REPO_URL" > "$REPORT_JSON" || true
+
+              echo '"branch","commitMessage","commitHash","date","filePath","reason","stringsFound","diff"' > "$REPORT_CSV"
+
+              while IFS= read -r line || [ -n "$line" ]; do
+                echo "$line" | jq -r '[
+                  .branch,
+                  (.commit | gsub("\n|\r"; " ") | @csv),
+                  .commitHash,
+                  .date,
+                  .path,
+                  .reason,
+                  (.stringsFound | join(" | ")),
+                  (.diff | gsub("\n|\r"; " ") )
+                ] | @csv' >> "$REPORT_CSV"
+              done < "$REPORT_JSON"
             done
           done
           echo "✅ TruffleHog scanning complete!"
