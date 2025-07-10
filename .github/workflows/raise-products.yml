@@ -8,13 +8,17 @@ on:
         description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
       version:
-        description: 'Snaphsot version to raise (e.g. "12.0.0-SNAPSHOT")'
+        description: 'Snaphsot version to raise (e.g. "13.1.1-SNAPSHOT")'
         required: true
-        default: '12.0.0-SNAPSHOT'
+        default: '13.1.1-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/12.0.0/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/13.1.1/axonivy-engine.zip'
+      releaseBranch:
+        description: 'Create a release branch to backup source code of the current version (e.g. "release/12.0"). This release branch should only be created for LTS versions.'
+        required: true
+        default: 'release/12.0'
 
 
 jobs:
@@ -43,6 +47,7 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ inputs.engineUrl }}
+          export releaseBranch=${{ inputs.releaseBranch }}
           export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}

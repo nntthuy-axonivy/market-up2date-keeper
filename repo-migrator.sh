@@ -25,8 +25,6 @@ cloneRepo() {
 }
 
 updateMavenVersion() {
-  updateMvnProperty "project.build.plugin.version" "12.0.0"
-  updateMvnProperty "tester.version" "12.0.1"
   artifactVersion $convert_to_version
 
   # commit changes
@@ -35,10 +33,24 @@ updateMavenVersion() {
 }
 
 updateActions() {
-  tag="v5"
+  tag="v6"
   updateWorkflows "${tag}"
   git add .
   git commit -m "Update workflow actions to ${tag}"
+}
+
+if [ -z "$releaseBranch" ]; then
+  releaseBranch="release/12.0"
+fi
+
+createReleaseBranch() {
+  echo "Create release branch ${releaseBranch}"
+  if git ls-remote --heads origin "${releaseBranch}" | grep -q "${releaseBranch}"; then
+    echo "Branch ${releaseBranch} already exists in ${repo_name}"
+  else
+    git checkout -b "${releaseBranch}"
+    git push --set-upstream origin ${releaseBranch}
+  fi
 }
 
 push() {
@@ -48,7 +60,7 @@ push() {
   else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
-    gh pr create --title "Migrate to 12.0 :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
+    gh pr create --title "Migrate to ${convert_to_version} :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
   fi
 }
@@ -59,6 +71,7 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
+createReleaseBranch
 branch="raise-to-${convert_to_version}"
 git switch -c $branch
 
