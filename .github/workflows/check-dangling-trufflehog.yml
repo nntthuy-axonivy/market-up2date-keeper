@@ -51,7 +51,8 @@ jobs:
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-              trufflehog git "$REPO_URL" --config ./trufflehog-custom-rules.yaml --json | jq '.' > "$REPORT" || true
+              trufflehog --config ./trufflehog-custom-rules.yaml --json "$REPO_URL" | jq '.' > "$REPORT" || true
+              # trufflehog --json --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
             done
           done
           echo "✅ TruffleHog scanning complete!"
