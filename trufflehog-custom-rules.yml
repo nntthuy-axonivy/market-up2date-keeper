@@ -1,3 +1,0 @@
-rules:
-  - name: Generic Sensitive Keywords
-    regex: (?i)\b[A-Z0-9_-]*(password|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Z0-9_-]*\b\s*[:=]\s*['"]?[^'" \t\r\n]+['"]?
