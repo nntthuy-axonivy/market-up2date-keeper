@@ -1,7 +1,3 @@
-[
-  {
-    "name": "Sensitive keyword detector",
-    "regex": "(?i)\\b(password|secret[_-]?key|api[_-]?key|private[_-]?key|key)\\b\\s*[:=]?\\s*.+",
-    "tags": ["sensitive", "credentials"]
-  }
-]
+{
+  "Sensitive keyword detector": "(?i)(password|secret[_-]?key|api[_-]?key|private[_-]?key|mysql_root_password|postgres_password|sa_password)\\s*[:=]\\s*[^\\s]+"
+}
