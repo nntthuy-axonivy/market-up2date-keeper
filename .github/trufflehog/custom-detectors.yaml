@@ -1,0 +1,40 @@
+# .github/trufflehog/custom_detectors.yaml
+# Custom detectors for TruffleHog scanning
+
+detectors:
+  # 1️⃣ Generic sensitive keywords — catches keys like password, secret, token, apiKey, etc.
+  - name: generic-sensitive-keywords
+    regex:
+      generic_sensitive_keywords: (?i)([A-Za-z0-9_-]*(pass(word)?|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Za-z0-9_-]*\s*[:=]\s*["']?[^\s"']+["']?)
+    primary_regex_name: generic_sensitive_keywords
+    keywords:
+      - password
+      - passwd
+      - secret
+      - token
+      - apikey
+      - privatekey
+      - key
+    tags:
+      - sensitive
+      - credential
+    entropy: 1.0
+    explanation: >
+      Detects lines where variable names include common sensitive keywords (e.g., password, secret, token)
+      followed by a value assignment using ':' or '='.
+
+  # 2️⃣ Sensitive values containing "password"
+  - name: sensitive-value-contains-password
+    regex:
+      sensitive_value_contains_password: (?i)([A-Za-z0-9_-]+\s*[:=]\s*["']?[^\s"']*pass(word)?[^\s"']*["']?)
+    primary_regex_name: sensitive_value_contains_password
+    keywords:
+      - password
+      - passwd
+    tags:
+      - sensitive
+      - credential
+    entropy: 1.0
+    explanation: >
+      Detects assignments where the value itself contains the word "password", such as
+      db_secret="superpassword123" or token='mypasswordtoken'.
