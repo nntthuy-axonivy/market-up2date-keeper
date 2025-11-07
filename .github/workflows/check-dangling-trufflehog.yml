@@ -24,6 +24,9 @@ jobs:
       - name: Install TruffleHog
         run: pip install trufflehog
 
+      - name: Check TruffleHog version
+        run: trufflehog --version
+
       - name: Prepare inputs
         id: prep
         run: |
@@ -51,7 +54,7 @@ jobs:
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-              trufflehog --json --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
+              trufflehog git "$REPO_URL" --config .github/trufflehog/custom-detectors.yaml --json | jq '.' > "$REPORT" || true
             done
           done
           echo "✅ TruffleHog scanning complete!"

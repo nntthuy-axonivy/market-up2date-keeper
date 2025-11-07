@@ -1,3 +1,4 @@
 {
-  "Generic sensitive keywords": "(?i)[A-Z0-9_-]*(password|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Z0-9_-]*\\s*[:=]\\s*[^\\s]+"
+  "Generic sensitive keywords": "(?i)\\b[A-Za-z0-9_-]*(?:pass(?:word)?|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Za-z0-9_-]*\\b\\s*[:=]\\s*(?:\"[^\"]+\"|'[^']+'|[^\\s]+)",
+  "Sensitive value contains password": "(?i)\\b[A-Za-z0-9_-]+\\s*[:=]\\s*(?:\"[^\"]*pass(?:word)?[^\"]*\"|'[^']*pass(?:word)?[^']*'|[^\\s]*pass(?:word)?[^\\s]*)"
 }

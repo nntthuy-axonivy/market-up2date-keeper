@@ -1,0 +1,23 @@
+detectors:
+  - name: generic_sensitive_keywords
+    keywords:
+      - password
+      - passwd
+      - secret
+      - token
+      - key
+    regex:
+      match: (?i)\b[A-Za-z0-9_-]*(?:pass(?:word)?|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Za-z0-9_-]*\b\s*[:=]\s*(?:"[^"]+"|'[^']+'|[^\s]+)
+    severity: high
+    tags:
+      - credentials
+
+  - name: sensitive_value_contains_password
+    keywords:
+      - password
+      - passwd
+    regex:
+      match: (?i)\b[A-Za-z0-9_-]+\s*[:=]\s*(?:"[^"]*pass(?:word)?[^"]*"|'[^']*pass(?:word)?[^']*'|[^\s]*pass(?:word)?[^\s]*)
+    severity: high
+    tags:
+      - secrets
