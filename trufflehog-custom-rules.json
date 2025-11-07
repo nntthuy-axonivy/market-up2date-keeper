@@ -1,3 +1,0 @@
-{
-  "Generic sensitive keywords": "(?i)[A-Z0-9_-]*(password|passwd|secret|token|api[_-]?key|private[_-]?key|key)[A-Z0-9_-]*\\s*[:=]\\s*[^\\s]+"
-}
