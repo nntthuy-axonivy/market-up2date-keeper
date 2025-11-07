@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Sensitive keyword detector",
+    "regex": "(?i)\\b(password|secret[_-]?key|api[_-]?key|private[_-]?key|key)\\b\\s*[:=]?\\s*.+",
+    "tags": ["sensitive", "credentials"]
+  }
+]

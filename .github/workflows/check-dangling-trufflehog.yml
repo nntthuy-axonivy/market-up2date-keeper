@@ -46,12 +46,12 @@ jobs:
             echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
             for REPO in "${REPO_LIST[@]}"; do
               echo "🚨 Scanning $ORG/$REPO ..."
-               rm -rf "$REPO"
+              rm -rf "$REPO"
               REPO_URL="https://github.com/$ORG/$REPO.git"
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-              trufflehog --json "$REPO_URL" | jq '.' > "$REPORT" || true
+              trufflehog --json --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
             done
           done
           echo "✅ TruffleHog scanning complete!"
