@@ -12,20 +12,6 @@ on:
         description: 'Comma-separated list of repo names (optional)'
         default: ''
 
-name: Checking dangling commits by Trufflehog
-
-permissions:
-  contents: read
-on:
-  workflow_dispatch:
-    inputs:
-      workingOrgs:
-        description: 'Comma-separated orgs to scan'
-        default: 'axonivy-market'
-      workingRepos:
-        description: 'Comma-separated list of repo names (optional)'
-        default: ''
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
