@@ -23,7 +23,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ORG="${{ github.event.inputs.workingOrg || 'axonivy-market' }}"
+          ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
           echo "🔍 Fetching repos from $ORG"
 
           # Get repo names as a JSON array
@@ -52,7 +52,7 @@ jobs:
       matrix:
         repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
     env:
-      ORG: ${{ github.event.inputs.workingOrg }}
+      ORG: ${{ github.event.inputs.workingOrgs }}
     steps:
       - uses: actions/checkout@v4
       - name: Install TruffleHog
