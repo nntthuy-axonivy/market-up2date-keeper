@@ -62,8 +62,11 @@ jobs:
           REPO="${{ matrix.repo }}"
           echo "🚨 Scanning $ORG/$REPO ..."
           mkdir -p trufflehog-reports
-          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "https://github.com/$ORG/$REPO.git" \
-            | jq '.' > "trufflehog-reports/${ORG}__${REPO}.json" || true
+          REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
+
+          trufflehog --json --regex \
+            --rules ./trufflehog-custom-rules.json \
+            "$REPO_URL" | jq '.' > "trufflehog-reports/${ORG}__${REPO}.json" || true
       - uses: actions/upload-artifact@v4
         with:
           name: trufflehog-${{ matrix.repo }}
