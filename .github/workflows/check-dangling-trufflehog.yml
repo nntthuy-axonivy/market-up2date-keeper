@@ -26,20 +26,23 @@ jobs:
           ORG="${{ github.event.inputs.workingOrg || 'axonivy-market' }}"
           echo "🔍 Fetching repos from $ORG"
 
-          # Get repos as JSON array of names
+          # Get repo names as a JSON array
           REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-
           echo "📦 Found repos: $REPOS"
 
-          # Validate JSON
           if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
-            echo "❌ No repos found for $ORG or missing permissions"
+            echo "❌ No repos found or missing permissions"
             exit 1
           fi
 
-          # Create a JSON matrix object { "include": [ "repo1", "repo2", ... ] }
+          # Build matrix JSON object
           MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
-          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+
+          # ✅ Properly write multi-line JSON to output
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
 
   truffle-scan:
     needs: prepare
