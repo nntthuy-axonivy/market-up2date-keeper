@@ -15,21 +15,31 @@ on:
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
     outputs:
       repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Generate matrix dynamically
         id: set-matrix
         env:
-          ORG: ${{ github.event.inputs.workingOrgs }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          ORG="${{ github.event.inputs.workingOrg || 'axonivy-market' }}"
           echo "🔍 Fetching repos from $ORG"
-          REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
+
+          # Get repos as JSON array of names
+          REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
+
+          echo "📦 Found repos: $REPOS"
+
+          # Validate JSON
+          if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
+            echo "❌ No repos found for $ORG or missing permissions"
+            exit 1
+          fi
+
+          # Create a JSON matrix object { "include": [ "repo1", "repo2", ... ] }
           MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-        shell: bash
 
   truffle-scan:
     needs: prepare
