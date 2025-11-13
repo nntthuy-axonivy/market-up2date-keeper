@@ -23,7 +23,7 @@ jobs:
       - name: Generate matrix dynamically
         id: set-matrix
         env:
-          ORG: ${{ github.event.inputs.workingOrg }}
+          ORG: ${{ github.event.inputs.workingOrgs }}
         run: |
           echo "🔍 Fetching repos from $ORG"
           REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
