@@ -14,35 +14,46 @@ on:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Generate matrix dynamically
-        id: set-matrix
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
-          echo "🔍 Fetching repos from $ORG"
+  runs-on: ubuntu-latest
+  outputs:
+    repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
+  steps:
+    - name: Generate matrix dynamically
+    - id: set-matrix
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
+        INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
 
-          # Get repo names as a JSON array
+        echo "🔍 Org: $ORG"
+        echo "🔍 User Repo Input: '$INPUT_REPOS'"
+
+        if [ -n "$INPUT_REPOS" ]; then
+          echo "📌 User provided repos. Using those only."
+
+          # split user input into a JSON array
+          REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
+
+        else
+          echo "📦 No repos provided. Fetching all repos from org: $ORG"
+
           REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-          echo "📦 Found repos: $REPOS"
 
           if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
             echo "❌ No repos found or missing permissions"
             exit 1
           fi
+        fi
 
-          # Build matrix JSON object
-          MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
+        echo "📦 Final repo list: $REPOS"
 
-          # ✅ Properly write multi-line JSON to output
-          echo "matrix<<EOF" >> $GITHUB_OUTPUT
-          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
 
+        # Output matrix
+        echo "matrix<<EOF" >> $GITHUB_OUTPUT
+        echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
   truffle-scan:
     needs: prepare
