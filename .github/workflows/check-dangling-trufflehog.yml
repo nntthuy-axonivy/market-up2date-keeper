@@ -63,31 +63,20 @@ jobs:
           REPO="${{ matrix.repo }}"
           REPORT="trufflehog-reports/${ORG}__${REPO}.json"
           mkdir -p trufflehog-reports
+
           REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
           rm -rf "$REPO"
 
           echo "🚨 Scanning $ORG/$REPO ..."
+          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" \
+            | jq '.' > "$REPORT" || true
 
-          timeout 2m trufflehog --json --regex \
-            --rules ./trufflehog-custom-rules.json \
-            "$REPO_URL" | jq '.' > "$REPORT" 2>/dev/null\
-          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
-
-          EXIT_CODE=$?
-
-          if [ $EXIT_CODE -eq 124 ]; then
-            echo "⏱️ Full scan timed out → fallback to latest 100 commits"
-            rm -f "$REPORT"
-
-            timeout 2m trufflehog --json --regex \
-              --rules ./trufflehog-custom-rules.json \
-              --max-depth 100 \
-              "$REPO_URL" | jq '.' > "$REPORT" || true
-          else
-            echo "✅ Full scan completed normally"
-          fi
-
-          echo "📄 Saved: $REPORT"
+      # 🔥 Upload each JSON into the SAME artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-temp
+          path: trufflehog-reports/${{ env.ORG }}__${{ matrix.repo }}.json
+          if-no-files-found: warn
 
   package:
     needs: truffle-scan
@@ -96,7 +85,7 @@ jobs:
       - name: Download all JSON files
         uses: actions/download-artifact@v4
         with:
-          name: trufflehog-reports
+          name: trufflehog-temp
           path: reports
 
       - name: Create final ZIP
