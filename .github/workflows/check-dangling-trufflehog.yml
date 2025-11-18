@@ -68,31 +68,28 @@ jobs:
 
           echo "🚨 Scanning $ORG/$REPO ..."
 
-          git clone "$REPO_URL" "$REPO"
-          if ! timeout 2m trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO" | jq '.' > "$REPORT"; then
-            echo "⚠️ Repo $REPO took too long, scanning only last 100 commits..."
-            rm -rf "$REPO"
-            git clone --depth 100 "$REPO_URL" "$REPO"
-            trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO" | jq '.' > "$REPORT" || true
+          echo "▶️ Full scan (timeout after 2 minutes)..."
+          timeout 2m trufflehog --json --regex \
+            --rules ./trufflehog-custom-rules.json \
+            "$REPO_URL" | jq '.' > "$REPORT" 2>/dev/null
+
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -eq 124 ]; then
+            echo "⏱️ Full scan timed out → fallback to latest 100 commits"
+            rm -f "$REPORT"
+
+            timeout 2m trufflehog --json --regex \
+              --rules ./trufflehog-custom-rules.json \
+              --max-depth 100 \
+              "$REPO_URL" | jq '.' > "$REPORT" || true
+          else
+            echo "✅ Full scan completed normally"
           fi
 
-  collect-artifacts:
-    needs: truffle-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all TruffleHog artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-reports
+          echo "📄 Saved: $REPORT"
 
-      - name: Combine all reports into one zip
-        run: |
-          cd all-reports
-          zip -r ../trufflehog-all-repos.zip .
-          cd ..
-
-      - name: Upload final combined artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-all-repos
-          path: trufflehog-all-repos.zip
+          name: trufflehog-${{ matrix.repo }}
+          path: trufflehog-reports/
