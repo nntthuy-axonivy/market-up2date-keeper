@@ -77,22 +77,22 @@ jobs:
           fi
 
     collect-artifacts:
-    needs: truffle-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all TruffleHog artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-reports
+      needs: truffle-scan
+      runs-on: ubuntu-latest
+      steps:
+        - name: Download all TruffleHog artifacts
+          uses: actions/download-artifact@v4
+          with:
+            path: all-reports
 
-      - name: Combine all reports into one zip
-        run: |
-          cd all-reports
-          zip -r ../trufflehog-all-repos.zip .
-          cd ..
+        - name: Combine all reports into one zip
+          run: |
+            cd all-reports
+            zip -r ../trufflehog-all-repos.zip .
+            cd ..
 
-      - name: Upload final combined artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trufflehog-all-repos
-          path: trufflehog-all-repos.zip
+        - name: Upload final combined artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: trufflehog-all-repos
+            path: trufflehog-all-repos.zip
