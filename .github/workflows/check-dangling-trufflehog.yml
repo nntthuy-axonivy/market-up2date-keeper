@@ -89,7 +89,7 @@ jobs:
 
           echo "📄 Saved: $REPORT"
 
-    collect-artifacts:
+  collect-artifacts:
     needs: truffle-scan
     runs-on: ubuntu-latest
     steps:
