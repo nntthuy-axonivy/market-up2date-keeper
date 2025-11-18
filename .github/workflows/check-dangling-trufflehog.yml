@@ -23,34 +23,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
+          ORG="${{ github.event.inputs.workingOrgs }}"
           INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
 
-          echo "🔍 Org: $ORG"
-          echo "🔍 User Repo Input: '$INPUT_REPOS'"
-
+          # Get repo names as a JSON array          
           if [ -n "$INPUT_REPOS" ]; then
-            echo "📌 User provided repos. Using those only."
-
-            # split user input into a JSON array
             REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
-
           else
-            echo "📦 No repos provided. Fetching all repos from org: $ORG"
-
             REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-
             if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
               echo "❌ No repos found or missing permissions"
               exit 1
             fi
+            echo "📦 Found repos: $REPOS"
           fi
 
-          echo "📦 Final repo list: $REPOS"
-
+          # Build matrix JSON object
           MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
 
-          # Output matrix
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -71,14 +61,38 @@ jobs:
       - name: Run TruffleHog
         run: |
           REPO="${{ matrix.repo }}"
-          echo "🚨 Scanning $ORG/$REPO ..."
+          REPORT="trufflehog-reports/${ORG}__${REPO}.json"
           mkdir -p trufflehog-reports
           REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
+          rm -rf "$REPO"
 
-          trufflehog --json --regex \
-            --rules ./trufflehog-custom-rules.json \
-            "$REPO_URL" | jq '.' > "trufflehog-reports/${ORG}__${REPO}.json" || true
-      - uses: actions/upload-artifact@v4
+          echo "🚨 Scanning $ORG/$REPO ..."
+
+          git clone "$REPO_URL" "$REPO"
+          if ! timeout 2m trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO" | jq '.' > "$REPORT"; then
+            echo "⚠️ Repo $REPO took too long, scanning only last 100 commits..."
+            rm -rf "$REPO"
+            git clone --depth 100 "$REPO_URL" "$REPO"
+            trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO" | jq '.' > "$REPORT" || true
+          fi
+
+    collect-artifacts:
+    needs: truffle-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all TruffleHog artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: trufflehog-${{ matrix.repo }}
-          path: trufflehog-reports/
+          path: all-reports
+
+      - name: Combine all reports into one zip
+        run: |
+          cd all-reports
+          zip -r ../trufflehog-all-repos.zip .
+          cd ..
+
+      - name: Upload final combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-all-repos
+          path: trufflehog-all-repos.zip
