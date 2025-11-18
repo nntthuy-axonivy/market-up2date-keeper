@@ -74,27 +74,26 @@ jobs:
       # 🔥 Upload each JSON into the SAME artifact
       - uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-temp
+          name: trufflehog-${{ matrix.repo }}
           path: trufflehog-reports/${{ env.ORG }}__${{ matrix.repo }}.json
           if-no-files-found: warn
-          overwrite: true
 
   package:
     needs: truffle-scan
     runs-on: ubuntu-latest
     steps:
-      - name: Download all JSON files
+      - name: Download all reports
         uses: actions/download-artifact@v4
         with:
-          name: trufflehog-temp
-          path: reports
+          pattern: trufflehog-*
+          path: all-reports
 
-      - name: Create final ZIP
+      - name: Create final zip
         run: |
-          zip -r trufflehog-reports.zip reports
+          cd all-reports
+          zip -r final-trufflehog-reports.zip .
 
-      - name: Upload final ZIP file
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-reports
-          path: trufflehog-reports.zip
+          name: trufflehog-final
+          path: all-reports/final-trufflehog-reports.zip
