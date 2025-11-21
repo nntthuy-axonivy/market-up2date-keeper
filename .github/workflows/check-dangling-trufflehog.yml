@@ -28,7 +28,7 @@ jobs:
           if [ -n "$INPUT_REPOS" ]; then
             REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
           else
-			# Get full repo list from org
+          # Get full repo list from org
             REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
             echo "📦 Found repos: $REPOS"
           fi
