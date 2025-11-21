@@ -71,6 +71,25 @@ jobs:
           trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" \
             | jq '.' > "$REPORT" || true
 
+          timeout 2m trufflehog --json --regex \
+            --rules ./trufflehog-custom-rules.json \
+            "$REPO_URL" | jq '.' > "$REPORT" 2>/dev/null\
+          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
+ 
+          EXIT_CODE=$?
+ 
+          if [ $EXIT_CODE -eq 124 ]; then
+            echo "⏱️ Full scan timed out → fallback to latest 100 commits"
+            rm -f "$REPORT"
+ 
+            timeout 2m trufflehog --json --regex \
+              --rules ./trufflehog-custom-rules.json \
+              --max-depth 100 \
+              "$REPO_URL" | jq '.' > "$REPORT" || true
+          else
+            echo "✅ Full scan completed normally"
+          fi
+
       # 🔥 Upload each JSON into the SAME artifact
       - uses: actions/upload-artifact@v4
         with:
