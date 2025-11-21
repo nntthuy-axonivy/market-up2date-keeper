@@ -2,6 +2,7 @@ name: Checking dangling commits by Trufflehog
 
 permissions:
   contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -26,24 +27,21 @@ jobs:
           ORG="${{ github.event.inputs.workingOrgs }}"
           INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
 
-          # Get repo names as a JSON array          
           if [ -n "$INPUT_REPOS" ]; then
+            # User input repos
             REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
           else
+            # Get full repo list from Org
             REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-            if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
-              echo "❌ No repos found or missing permissions"
-              exit 1
-            fi
             echo "📦 Found repos: $REPOS"
           fi
 
-          # Build matrix JSON object
           MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
 
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
   truffle-scan:
     needs: prepare
@@ -54,57 +52,52 @@ jobs:
         repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
     env:
       ORG: ${{ github.event.inputs.workingOrgs }}
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Install TruffleHog
         run: pip install trufflehog jq
-      - name: Run TruffleHog
+
+      - name: Run TruffleHog (with timeout + fallback)
         run: |
           REPO="${{ matrix.repo }}"
           REPORT="trufflehog-reports/${ORG}__${REPO}.json"
           mkdir -p trufflehog-reports
-
           REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
-          rm -rf "$REPO"
 
           echo "🚨 Scanning $ORG/$REPO ..."
-          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" \
-            | jq '.' > "$REPORT" || true
 
-          timeout 2m trufflehog --json --regex \
+          # MAIN SCAN — max 2 minutes
+          if timeout 2m trufflehog --json --regex \
             --rules ./trufflehog-custom-rules.json \
-            "$REPO_URL" | jq '.' > "$REPORT" 2>/dev/null\
-          trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
- 
-          EXIT_CODE=$?
- 
-          if [ $EXIT_CODE -eq 124 ]; then
-            echo "⏱️ Full scan timed out → fallback to latest 100 commits"
-            rm -f "$REPORT"
- 
-            timeout 2m trufflehog --json --regex \
-              --rules ./trufflehog-custom-rules.json \
-              --max-depth 100 \
-              "$REPO_URL" | jq '.' > "$REPORT" || true
+            "$REPO_URL" | jq '.' > "$REPORT"; then
+              echo "✅ Full scan completed"
           else
-            echo "✅ Full scan completed normally"
+              echo "⏱️ Timeout → fallback to 100 commits"
+              timeout 1m trufflehog --json --regex \
+                --max-depth 100 \
+                --rules ./trufflehog-custom-rules.json \
+                "$REPO_URL" | jq '.' > "$REPORT" || true
           fi
 
-      # 🔥 Upload each JSON into the SAME artifact
+      # Upload each JSON using UNIQUE artifact name → NO CONFLICT
       - uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-${{ matrix.repo }}
+          name: trufflehog-report-${{ matrix.repo }}
           path: trufflehog-reports/${{ env.ORG }}__${{ matrix.repo }}.json
           if-no-files-found: warn
+
 
   package:
     needs: truffle-scan
     runs-on: ubuntu-latest
+
     steps:
-      - name: Download all reports
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: trufflehog-*
+          pattern: trufflehog-report-*
           path: all-reports
 
       - name: Create final zip
