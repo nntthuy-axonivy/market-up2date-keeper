@@ -104,8 +104,6 @@ name: Disable README_DE.md
 
 on:
   pull_request:
-    paths:
-      - "**/README_DE.md"
 
 jobs:
   prevent-modification:
