@@ -7,6 +7,8 @@ ignored_repos=(
   "demo-projects"
 )
 
+# GitHub organization to work on
+# For testing, please use a personal org
 org=axonivy-market
 
 githubRepos() {
