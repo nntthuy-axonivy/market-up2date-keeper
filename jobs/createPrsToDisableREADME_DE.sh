@@ -8,8 +8,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 DEFAULT_BRANCH="master"
 REVIEWER="Octopus-AxonIvy"
-README_DE="README_DE.md"
+README_FILE="README_DE.md"
 CODEOWNERS_FILE=".github/CODEOWNERS"
+CODEOWNERS_RULE="**/${README_FILE}  @axonivy-market/team-octopus"
 WORKFLOW_FILE=".github/workflows/disable-readme-de.yml"
 BRANCH_NAME="feature/MARP-3334-disable-README_DE-file"
 PR_TITLE="Add CODEOWNERS and workflow to disable README_DE.md"
@@ -52,16 +53,16 @@ createPR() {
   found_readme=false
   for dir in */; do
     if [[ "$dir" == *"product"* ]]; then
-      if [ -f "${dir}${README_DE}" ]; then
+      if [ -f "${dir}${README_FILE}" ]; then
         found_readme=true
-        echo "Found ${README_DE} in $dir"
+        echo "Found ${README_FILE} in $dir"
         break
       fi
     fi
   done
 
   if [ "$found_readme" = false ]; then
-    echo "⚠ ${README_DE} not found in any product folder of $repo_name, skipping...!"
+    echo "⚠ ${README_FILE} not found in any product folder of $repo_name, skipping...!"
     cd ..
     rm -rf "${repo_name}"
     return
@@ -79,17 +80,17 @@ createPR() {
 
   mkdir -p .github
   if [ -f "${CODEOWNERS_FILE}" ]; then
-    if ! grep -q "${README_DE}" "${CODEOWNERS_FILE}"; then
-      echo "✓ Adding ${README_DE} to existing CODEOWNERS"
-      printf "\n${README_DE}  @axonivy-market/team-octopus\n" >> "${CODEOWNERS_FILE}"
+    if ! grep -q "${README_FILE}" "${CODEOWNERS_FILE}"; then
+      echo "✓ Adding ${README_FILE} to existing CODEOWNERS"
+      printf "\n${CODEOWNERS_RULE}\n" >> "${CODEOWNERS_FILE}"
       changes_made=true
     else
-      echo "⚠ ${README_DE} already in CODEOWNERS"
+      echo "⚠ ${README_FILE} already in CODEOWNERS"
     fi
   else
     echo "✓ Creating new CODEOWNERS file"
     cat > "${CODEOWNERS_FILE}" << EOF
-${README_DE}  @axonivy-market/team-octopus
+${CODEOWNERS_RULE}
 EOF
     changes_made=true
   fi
@@ -97,7 +98,7 @@ EOF
   mkdir -p .github/workflows
   
   if [ ! -f "${WORKFLOW_FILE}" ]; then
-    echo "✓ Creating workflow to disable ${README_DE}"
+    echo "✓ Creating workflow to disable ${README_FILE}"
     cat > "${WORKFLOW_FILE}" << 'WORKFLOW_EOF'
 name: Disable README_DE.md
 
@@ -114,8 +115,23 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Check PR author
+        id: check_author
+        run: |
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          echo "PR author: $PR_AUTHOR"
+          
+          if [ "$PR_AUTHOR" = "weblate" ]; then
+            echo "✓ Author is weblate, bypassing README_DE.md check"
+            echo "bypass=true" >> $GITHUB_OUTPUT
+          else
+            echo "Author is not weblate, will check README_DE.md modifications"
+            echo "bypass=false" >> $GITHUB_OUTPUT
+          fi
           
       - name: Check if README_DE.md existed on default branch
+        if: steps.check_author.outputs.bypass != 'true'
         run: |
           git fetch origin ${{ github.base_ref }}
           if git ls-tree -r origin/${{ github.base_ref }} --name-only | grep -q 'README_DE\.md$'; then
@@ -145,7 +161,7 @@ WORKFLOW_EOF
       return
     fi
 
-    git commit -m "Add CODEOWNERS and workflow to disable ${README_DE}"
+    git commit -m "Add CODEOWNERS and workflow to disable ${README_FILE}"
 
     git push origin "$BRANCH_NAME"
 
