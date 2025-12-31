@@ -11,7 +11,7 @@ REVIEWER="Octopus-AxonIvy"
 README_FILE="README_DE.md"
 CODEOWNERS_FILE=".github/CODEOWNERS"
 CODEOWNERS_RULE="**/${README_FILE}  @axonivy-market/team-octopus"
-WORKFLOW_FILE=".github/workflows/disable-readme-de.yml"
+WORKFLOW_FILE=".github/workflows/translation-locker.yml"
 BRANCH_NAME="feature/MARP-3334-disable-README_DE-file"
 PR_TITLE="Add CODEOWNERS and workflow to disable README_DE.md"
 
@@ -49,7 +49,6 @@ createPR() {
   git clone "https://github.com/${org}/${repo_name}.git"
   cd "${repo_name}"
 
-  # Loop through directories to find product folder with README_DE.md
   found_readme=false
   for dir in */; do
     if [[ "$dir" == *"product"* ]]; then
@@ -100,48 +99,14 @@ EOF
   if [ ! -f "${WORKFLOW_FILE}" ]; then
     echo "✓ Creating workflow to disable ${README_FILE}"
     cat > "${WORKFLOW_FILE}" << 'WORKFLOW_EOF'
-name: Disable README_DE.md
+name: Translation Locker
 
 on:
   pull_request:
 
 jobs:
-  prevent-modification:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Check PR author
-        id: check_author
-        run: |
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          echo "PR author: $PR_AUTHOR"
-          
-          if [ "$PR_AUTHOR" = "weblate" ]; then
-            echo "✓ Author is weblate, bypassing README_DE.md check"
-            echo "bypass=true" >> $GITHUB_OUTPUT
-          else
-            echo "Author is not weblate, will check README_DE.md modifications"
-            echo "bypass=false" >> $GITHUB_OUTPUT
-          fi
-          
-      - name: Check if README_DE.md existed on default branch
-        if: steps.check_author.outputs.bypass != 'true'
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          if git ls-tree -r origin/${{ github.base_ref }} --name-only | grep -q 'README_DE\.md$'; then
-            echo "README_DE.md exists, checking for modification"
-            # Check if file content changed vs. base branch
-            if ! git diff --exit-code origin/${{ github.base_ref }}...HEAD -- '**/README_DE.md'; then
-              echo "⚠ ERROR: Modification of README_DE.md is not allowed."
-              exit 1
-            fi
-          else
-            echo "✓ README_DE.md does not exist on default branch, file can be created."
-          fi
+  build:
+    uses: axonivy-market/github-workflows/.github/workflows/translation-locker.yml@v6
 WORKFLOW_EOF
     changes_made=true
   else
