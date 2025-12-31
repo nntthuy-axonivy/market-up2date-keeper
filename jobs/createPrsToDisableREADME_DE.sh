@@ -49,22 +49,17 @@ createPR() {
   git clone "https://github.com/${org}/${repo_name}.git"
   cd "${repo_name}"
 
-  found_readme=false
-  for dir in */; do
-    if [[ "$dir" == *"product"* ]]; then
-      if [ -f "${dir}${README_FILE}" ]; then
-        found_readme=true
-        echo "Found ${README_FILE} in $dir"
-        break
-      fi
-    fi
-  done
-
-  if [ "$found_readme" = false ]; then
+  # Search for README_DE.md in any directory containing 'product' in its path
+  readme_files=$(find . -type f -name "${README_FILE}" | grep -i "product")
+  
+  if [ -z "$readme_files" ]; then
     echo "⚠ ${README_FILE} not found in any product folder of $repo_name, skipping...!"
     cd ..
     rm -rf "${repo_name}"
     return
+  else
+    echo "Found ${README_FILE} in:"
+    echo "$readme_files"
   fi
 
   # Checkout new branch.
