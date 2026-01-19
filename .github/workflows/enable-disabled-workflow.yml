@@ -1,8 +1,8 @@
-name: List Disabled Workflows
+name: Re-enable Disabled Workflows
 
 on:
   schedule:
-    - cron: "0 2 * * *"
+    - cron: "0 2 * * *" # Daily
   workflow_dispatch:
     inputs:
       workingOrgs:
@@ -10,39 +10,24 @@ on:
         default: 'nntthuy-axonivy'
 
 jobs:
-  scan:
+  reenable:
     runs-on: ubuntu-latest
 
     steps:
-      - name: List disabled workflows
+      - name: Re-enable workflows
         env:
           GH_TOKEN: ${{ github.token }}
-          ORG: ${{ github.event.inputs.workingOrgs }}
+          
         run: |
-          echo "Scanning org: $ORG"
-          echo "------------------------------------"
+          REPO="${{ github.event.inputs.workingOrgs }}"
+          workflows=$(curl -s \
+            -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/$REPO/actions/workflows)
 
-          page=1
-          while true; do
-            repos=$(curl -s \
+          echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .id' |
+          while read id; do
+            echo "Re-enabling workflow $id"
+            curl -X PUT \
               -H "Authorization: token $GH_TOKEN" \
-              "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
-
-            [ "$(echo "$repos" | jq length)" -eq 0 ] && break
-
-            echo "$repos" | jq -r '.[].name' | while read repo; do
-              workflows=$(curl -s \
-                -H "Authorization: token $GH_TOKEN" \
-                "https://api.github.com/repos/$ORG/$repo/actions/workflows")
-
-              disabled=$(echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .name')
-
-              if [ -n "$disabled" ]; then
-                echo ""
-                echo "Repo: $repo"
-                echo "$disabled" | sed 's/^/  - /'
-              fi
-            done
-
-            page=$((page + 1))
+              https://api.github.com/repos/$REPO/actions/workflows/$id/enable
           done
