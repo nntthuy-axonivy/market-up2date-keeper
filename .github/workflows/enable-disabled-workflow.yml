@@ -22,14 +22,27 @@ jobs:
           echo "Scanning org: $ORG"
           echo "------------------------------------"
 
-          workflows=$(curl -s \
-            -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/$REPO/actions/workflows)
-
-          echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .id' |
-          while read id; do
-            echo "Re-enabling workflow $id"
-            curl -X PUT \
+          page=1
+          while true; do
+            repos=$(curl -s \
               -H "Authorization: token $GH_TOKEN" \
-              https://api.github.com/repos/$REPO/actions/workflows/$id/enable
+              "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
+
+            [ "$(echo "$repos" | jq length)" -eq 0 ] && break
+
+            echo "$repos" | jq -r '.[].name' | while read repo; do
+              workflows=$(curl -s \
+                -H "Authorization: token $GH_TOKEN" \
+                "https://api.github.com/repos/$ORG/$repo/actions/workflows")
+
+              disabled=$(echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .name')
+
+              if [ -n "$disabled" ]; then
+                echo ""
+                echo "Repo: $repo"
+                echo "$disabled" | sed 's/^/  - /'
+              fi
+            done
+
+            page=$((page + 1))
           done
