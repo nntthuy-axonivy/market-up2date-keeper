@@ -37,7 +37,7 @@ jobs:
 
               echo "$workflows" | jq -r \
                 '.workflows[]? |
-                 select(.state=="disabled_inactivity") |
+                 select(.state=="disabled_manually") |
                  "\(.id)|\(.name)"' |
               while IFS="|" read id name; do
                 echo ""
