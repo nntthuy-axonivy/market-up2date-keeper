@@ -16,38 +16,33 @@ jobs:
     steps:
       - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
-          ORG: ${{ github.event.inputs.workingOrgs }}
+            GH_TOKEN: ${{ secrets.GH }}
+            ORG: ${{ github.event.inputs.workingOrgs }}
         run: |
-          set -e
-
-          echo "Scanning org: $ORG"
-          echo "------------------------------------"
-
-          page=1
-          while true; do
-            repos=$(curl -s \
-              -H "Authorization: token $GH_TOKEN" \
-              "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
-
-            [ "$(echo "$repos" | jq length)" -eq 0 ] && break
-
-            echo "$repos" | jq -r '.[].name' | while read repo; do
-              workflows=$(curl -s \
+            echo "Scanning org: $ORG"
+            echo "------------------------------------"
+            
+            page=1
+            while true; do
+                repos=$(curl -s \
                 -H "Authorization: token $GH_TOKEN" \
-                "https://api.github.com/repos/$ORG/$repo/actions/workflows")
-
-              echo "$workflows" | jq -r \
-                '.workflows[]? | select(.state=="disabled_inactivity") | "\(.id) \(.name)"' |
-              while read id name; do
-                echo "Repo: $repo"
-                echo "  Enabling workflow: $name ($id)"
-                curl -s -X PUT \
-                  -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable" \
-                  >/dev/null
-              done
+                "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
+            
+                [ "$(echo "$repos" | jq length)" -eq 0 ] && break
+            
+                echo "$repos" | jq -r '.[].name' | while read repo; do
+                workflows=$(curl -s \
+                    -H "Authorization: token $GH_TOKEN" \
+                    "https://api.github.com/repos/$ORG/$repo/actions/workflows")
+            
+                disabled=$(echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .name')
+            
+                if [ -n "$disabled" ]; then
+                    echo ""
+                    echo "Repo: $repo"
+                    echo "$disabled" | sed 's/^/  - /'
+                fi
+                done
+            
+                page=$((page + 1))
             done
-
-            page=$((page + 1))
-          done
