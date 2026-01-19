@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH }}
         run: |
           ORG="${{ github.event.inputs.workingOrg }}"
           echo "Scanning org: $ORG"
