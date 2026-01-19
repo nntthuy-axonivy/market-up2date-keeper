@@ -1,4 +1,4 @@
-name: List Disabled Workflows
+name: Re-enable Disabled Workflows
 
 on:
   schedule:
@@ -6,20 +6,25 @@ on:
   workflow_dispatch:
     inputs:
       workingOrgs:
-        description: 'Comma-separated orgs to scan'
-        default: 'axonivy-market'
+        description: "Organization to scan"
+        default: "nntthuy-axonivy"
+      dryRun:
+        description: "true = list only, false = enable"
+        default: "true"
 
 jobs:
   scan:
     runs-on: ubuntu-latest
 
     steps:
-      - name: List disabled workflows
+      - name: List and re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
           ORG: ${{ github.event.inputs.workingOrgs }}
+          DRY_RUN: ${{ github.event.inputs.dryRun }}
         run: |
-          echo "Scanning org: $ORG"
+          echo "Org: $ORG"
+          echo "Dry run: $DRY_RUN"
           echo "------------------------------------"
 
           page=1
@@ -35,13 +40,22 @@ jobs:
                 -H "Authorization: token $GH_TOKEN" \
                 "https://api.github.com/repos/$ORG/$repo/actions/workflows")
 
-              disabled=$(echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .name')
-
-              if [ -n "$disabled" ]; then
+              echo "$workflows" | jq -r \
+                '.workflows[] | select(.state=="disabled_inactivity") | "\(.id) \(.name)"' |
+              while read id name; do
                 echo ""
                 echo "Repo: $repo"
-                echo "$disabled" | sed 's/^/  - /'
-              fi
+                echo "  Workflow: $name (ID: $id)"
+
+                if [ "$DRY_RUN" = "false" ]; then
+                  echo "  → Enabling"
+                  curl -s -X PUT \
+                    -H "Authorization: token $GH_TOKEN" \
+                    "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable"
+                else
+                  echo "  → Dry run (not enabled)"
+                fi
+              done
             done
 
             page=$((page + 1))
