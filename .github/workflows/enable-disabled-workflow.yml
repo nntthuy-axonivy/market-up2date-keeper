@@ -1,4 +1,4 @@
-name: Re-enable Disabled Workflows
+name: List Disabled Workflows
 
 on:
   schedule:
@@ -6,57 +6,30 @@ on:
   workflow_dispatch:
     inputs:
       workingOrgs:
-        description: "Organization to scan"
-        default: "nntthuy-axonivy"
-      dryRun:
-        description: "true = list only, false = enable"
-        default: "true"
+        description: 'Comma-separated orgs to scan'
+        default: 'nntthuy-axonivy'
 
 jobs:
   scan:
     runs-on: ubuntu-latest
 
     steps:
-      - name: List and re-enable disabled workflows
+      - name: List disabled workflows
         env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           ORG: ${{ github.event.inputs.workingOrgs }}
-          DRY_RUN: ${{ github.event.inputs.dryRun }}
         run: |
-          echo "Org: $ORG"
-          echo "Dry run: $DRY_RUN"
+          echo "Scanning org: $ORG"
           echo "------------------------------------"
 
-          page=1
-          while true; do
-            repos=$(curl -s \
+          workflows=$(curl -s \
+            -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/$REPO/actions/workflows)
+
+          echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .id' |
+          while read id; do
+            echo "Re-enabling workflow $id"
+            curl -X PUT \
               -H "Authorization: token $GH_TOKEN" \
-              "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
-
-            [ "$(echo "$repos" | jq length)" -eq 0 ] && break
-
-            echo "$repos" | jq -r '.[].name' | while read repo; do
-              workflows=$(curl -s \
-                -H "Authorization: token $GH_TOKEN" \
-                "https://api.github.com/repos/$ORG/$repo/actions/workflows")
-
-              echo "$workflows" | jq -r \
-                '.workflows[] | select(.state=="disabled_inactivity") | "\(.id) \(.name)"' |
-              while read id name; do
-                echo ""
-                echo "Repo: $repo"
-                echo "  Workflow: $name (ID: $id)"
-
-                if [ "$DRY_RUN" = "false" ]; then
-                  echo "  → Enabling"
-                  curl -s -X PUT \
-                    -H "Authorization: token $GH_TOKEN" \
-                    "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable"
-                else
-                  echo "  → Dry run (not enabled)"
-                fi
-              done
-            done
-
-            page=$((page + 1))
+              https://api.github.com/repos/$REPO/actions/workflows/$id/enable
           done
