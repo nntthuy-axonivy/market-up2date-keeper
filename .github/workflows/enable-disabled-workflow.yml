@@ -26,7 +26,7 @@ jobs:
           echo "------------------------------------"
 
           # Get all non-archived repos in org
-          gh repo list "$ORG" --limit 1000 --json name,archived -q '.[] | select(.archived==false) | .name' |
+          gh repo list "$ORG" --limit 1000 --json name,isArchived -q '.[] | select(.isArchived==false) | .name' |
           while read repo; do
             echo "Checking repo: $repo"
             workflows=$(curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows")
