@@ -1,5 +1,8 @@
 name: Re-enable Disabled Workflows
 
+permissions:
+  contents: read
+  actions: write
 on:
   schedule:
     - cron: '0 2 * * 1'
@@ -38,6 +41,6 @@ jobs:
             echo "$workflows" | jq -r '.workflows[]? | select(.state=="disabled_inactivity") | "\(.id)|\(.name)"' | 
             while IFS="|" read id name; do
               echo "  → Enabling workflow: $name (ID: $id)"
-              curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable"
+              curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable">/dev/null
             done
           done
