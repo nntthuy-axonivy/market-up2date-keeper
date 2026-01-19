@@ -2,32 +2,52 @@ name: Re-enable Disabled Workflows
 
 on:
   schedule:
-    - cron: "0 2 * * *" # Daily
+    - cron: "0 2 * * *"
   workflow_dispatch:
     inputs:
       workingOrgs:
-        description: 'Comma-separated orgs to scan'
-        default: 'nntthuy-axonivy'
+        description: "Organization to scan"
+        default: "nntthuy-axonivy"
 
 jobs:
   reenable:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Re-enable workflows
+      - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
-          
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          ORG: ${{ github.event.inputs.workingOrgs }}
         run: |
-          REPO="${{ github.event.inputs.workingOrgs }}"
-          workflows=$(curl -s \
-            -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/$REPO/actions/workflows)
+          set -e
 
-          echo "$workflows" | jq -r '.workflows[] | select(.state=="disabled_inactivity") | .id' |
-          while read id; do
-            echo "Re-enabling workflow $id"
-            curl -X PUT \
+          echo "Scanning org: $ORG"
+          echo "------------------------------------"
+
+          page=1
+          while true; do
+            repos=$(curl -s \
               -H "Authorization: token $GH_TOKEN" \
-              https://api.github.com/repos/$REPO/actions/workflows/$id/enable
+              "https://api.github.com/orgs/$ORG/repos?per_page=100&page=$page")
+
+            [ "$(echo "$repos" | jq length)" -eq 0 ] && break
+
+            echo "$repos" | jq -r '.[].name' | while read repo; do
+              workflows=$(curl -s \
+                -H "Authorization: token $GH_TOKEN" \
+                "https://api.github.com/repos/$ORG/$repo/actions/workflows")
+
+              echo "$workflows" | jq -r \
+                '.workflows[]? | select(.state=="disabled_inactivity") | "\(.id) \(.name)"' |
+              while read id name; do
+                echo "Repo: $repo"
+                echo "  Enabling workflow: $name ($id)"
+                curl -s -X PUT \
+                  -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable" \
+                  >/dev/null
+              done
+            done
+
+            page=$((page + 1))
           done
