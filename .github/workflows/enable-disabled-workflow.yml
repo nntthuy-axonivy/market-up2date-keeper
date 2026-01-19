@@ -38,7 +38,7 @@ jobs:
             fi
 
             # Enable disabled workflows due to inactivity
-            echo "$workflows" | jq -r '.workflows[]? | select(.state=="disabled_inactivity") | "\(.id)|\(.name)"' | 
+            echo "$workflows" | jq -r '.workflows[]? | select(.state=="disabled_manually") | "\(.id)|\(.name)"' | 
             while IFS="|" read id name; do
               echo "  → Enabling workflow: $name (ID: $id)"
               curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable">/dev/null
