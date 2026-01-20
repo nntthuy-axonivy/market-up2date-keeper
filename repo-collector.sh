@@ -21,8 +21,13 @@ log "org=${org}"
 githubRepos() {
   ghApi="orgs/${org}/repos?per_page=100"
   log "GET https://api.github.com/${ghApi}"
-  curl -s https://api.github.com/${ghApi}
+
+  curl -s \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    https://api.github.com/${ghApi}
 }
+
 
 githubReposC() {
   rm -f /tmp/gh-thuy-org.json
