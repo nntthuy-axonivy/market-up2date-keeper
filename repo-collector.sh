@@ -46,7 +46,7 @@ githubReposC() {
 collectRepos() {
   log "Collecting eligible repositories"
 
-  repos=$(githubReposC |
+  repos=$(githubRepos |
     jq -r '.[] |
       select(.archived == false) |
       select(.is_template == false) |
