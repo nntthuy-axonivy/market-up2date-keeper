@@ -4,30 +4,27 @@ permissions:
   contents: read
   actions: write
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 2 * * 1'
-  workflow_dispatch:
-    inputs:
-      workingOrg:
-        description: 'Organization to scan'
-        default: 'axonivy-market'
 
 jobs:
   re-enable:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
           GH_TOKEN: ${{ secrets.GH }}
         run: |
-          ORG="${{ github.event.inputs.workingOrg }}"
+          source repo-collector.sh
+          ORG="thuy-org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
 
           # Get all non-archived repos in org
-          gh repo list "$ORG" --limit 1000 --json name,isArchived -q '.[] | select(.isArchived==false) | .name' |
-          while read repo; do
+          for repo in $(collectRepos); do
             echo "Checking repo: $repo"
             workflows=$(curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows")
 
