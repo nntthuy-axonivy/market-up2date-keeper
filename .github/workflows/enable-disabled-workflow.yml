@@ -23,6 +23,7 @@ jobs:
           ORG="$org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
+          echo "$(collectRepos)"
 
           # Get all non-archived repos in org
           for repo in $(collectRepos); do
