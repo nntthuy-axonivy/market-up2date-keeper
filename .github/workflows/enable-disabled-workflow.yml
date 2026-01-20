@@ -13,13 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
           GH_TOKEN: ${{ secrets.GH }}
         run: |
           set -euo pipefail
-          source /../repo-collector.sh
+          source ./repo-collector.sh
           ORG="$org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
