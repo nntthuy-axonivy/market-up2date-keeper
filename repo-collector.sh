@@ -9,7 +9,7 @@ ignored_repos=(
 
 # GitHub organization to work on
 # For testing, please use a personal org
-org=axonivy-market
+org=thuy-org
 
 githubRepos() {
   ghApi="orgs/${org}/repos?per_page=100"
