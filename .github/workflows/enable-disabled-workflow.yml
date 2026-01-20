@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH }}
         run: |
           source repo-collector.sh
           ORG="$org"
