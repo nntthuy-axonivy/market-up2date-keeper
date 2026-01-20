@@ -16,15 +16,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ secrets.GH }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          source repo-collector.sh
-          ORG="thuy-org"
+          set -euo pipefail
+          source ./repo-collector.sh
+          ORG="$org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
-          echo "Repos found:"
-          echo "Repos found: $(collectRepos)"
-          collectRepos || true
 
           # Get all non-archived repos in org
           for repo in $(collectRepos); do
@@ -39,7 +37,7 @@ jobs:
 
             # Enable disabled workflows due to inactivity
             echo "$workflows" | jq -r '.workflows[]? | select(.state=="disabled_manually") | "\(.id)|\(.name)"' | 
-            while IFS="|" read id name; do
+            while IFS="|" read -r id name; do
               echo "  → Enabling workflow: $name (ID: $id)"
               curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable">/dev/null
             done
