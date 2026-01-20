@@ -19,7 +19,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH }}
         run: |
           set -euo pipefail
-          source ./repo-collector.sh
+          source /../repo-collector.sh
           ORG="$org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
