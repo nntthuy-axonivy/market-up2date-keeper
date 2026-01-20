@@ -1,4 +1,10 @@
-# re-usable collection of market repos to modify
+#!/usr/bin/env bash
+
+log() {
+  echo "[repo-collector] $*" >&2
+}
+
+log "Starting repo collection"
 
 ignored_repos=(
   "market-up2date-keeper"
@@ -7,53 +13,51 @@ ignored_repos=(
   "demo-projects"
 )
 
-# GitHub organization to work on
-# For testing, please use a personal org
+log "ignored_repos=${ignored_repos[*]}"
+
 org=thuy-org
+log "org=${org}"
 
 githubRepos() {
-  echo "[repo-collector] Fetching repositories from GitHub API (no cache)"
   ghApi="orgs/${org}/repos?per_page=100"
-  echo "[repo-collector] githubRepos → GET https://api.github.com/${ghApi}"
-  curl https://api.github.com/${ghApi}
+  log "GET https://api.github.com/${ghApi}"
+  curl -s https://api.github.com/${ghApi}
 }
 
 githubReposC() {
   cache="/tmp/gh-${org}.json"
-  echo "[repo-collector] cache=${cache}"
+  log "cache=${cache}"
 
   if [ ! -f "${cache}" ]; then
-    echo "[repo-collector] cache miss → fetching repos"
+    log "cache miss → fetching repos"
     githubRepos > "${cache}"
   else
-    echo "[repo-collector] cache hit"
+    log "cache hit"
   fi
 
-  # Print number of repos retrieved
   repo_count=$(jq length "${cache}")
-  echo "[repo-collector] repos_in_cache=${repo_count}"
+  log "repos_in_cache=${repo_count}"
 
+  # IMPORTANT: JSON ONLY to stdout
   cat "${cache}"
 }
 
 collectRepos() {
-  echo "[repo-collector] Collecting eligible repositories"
-  githubReposC | 
-    jq -r '.[] | 
-    select(.archived == false) | 
-    select(.is_template == false) | 
-    select(.default_branch == "master") | 
-    select(.language != null) | 
-      .name'
-  echo "[repo-collector] eligible_repos:"
-  if [ -z "${repos}" ]; then
-    echo "  (none)"
-  else
-    while read -r repo; do
-      echo "  - ${repo}"
-    done <<< "${repos}"
-  fi
+  log "Collecting eligible repositories"
 
-  # IMPORTANT: return the repos for callers (e.g. GitHub Actions)
+  repos=$(githubReposC |
+    jq -r '.[] |
+      select(.archived == false) |
+      select(.is_template == false) |
+      select(.default_branch == "master") |
+      select(.language != null) |
+      .name'
+  )
+
+  log "eligible_repo_count=$(echo "${repos}" | wc -l | tr -d ' ')"
+  log "eligible_repos:"
+  echo "${repos}" | sed 's/^/  - /' >&2
+
+  # ✅ ONLY repo names to stdout
   echo "${repos}"
 }
