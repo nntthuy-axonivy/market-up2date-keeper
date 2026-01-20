@@ -19,7 +19,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH }}
         run: |
           source repo-collector.sh
-          ORG="$org"
+          ORG="thuy-org"
           echo "Scanning org: $ORG"
           echo "------------------------------------"
           echo "Repos found:"
