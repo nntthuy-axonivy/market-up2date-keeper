@@ -25,6 +25,7 @@ githubRepos() {
 }
 
 githubReposC() {
+  rm -f /tmp/gh-thuy-org.json
   cache="/tmp/gh-${org}.json"
   log "cache=${cache}"
 
