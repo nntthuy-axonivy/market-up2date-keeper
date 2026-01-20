@@ -16,11 +16,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH }}
         run: |
           source repo-collector.sh
           echo "Scanning org: $org"
           echo "------------------------------------"
+          echo "Repos found:"
+          collectRepos || true
+
 
           # Get all non-archived repos in org
           for repo in $(collectRepos); do
