@@ -15,7 +15,7 @@ ignored_repos=(
 
 log "ignored_repos=${ignored_repos[*]}"
 
-org=nqhoan-org
+org=thuy-org
 log "org=${org}"
 
 githubRepos() {
