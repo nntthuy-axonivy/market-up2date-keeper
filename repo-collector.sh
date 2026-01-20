@@ -59,8 +59,7 @@ collectRepos() {
     jq -r '.[] |
       select(.archived == false) |
       select(.is_template == false) |
-      select(.default_branch == "master") |
-      select(.language != null) |
+      select(.default_branch == "master")
       .name'
   )
 
